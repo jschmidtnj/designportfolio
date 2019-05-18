@@ -1,4 +1,4 @@
-module github.com/jschmidtnj/mywebsite2
+module github.com/jschmidtnj/designportfolio
 
 go 1.12
 

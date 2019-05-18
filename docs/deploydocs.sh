@@ -8,7 +8,7 @@ npm run build
 
 rm -rf .vuepress/dist/
 
-mv mywebsite2/ .vuepress/dist
+mv designportfolio/ .vuepress/dist
 
 # navigate into the build output directory
 cd .vuepress/dist
@@ -25,6 +25,6 @@ git commit -m 'deploy'
 
 # if you are deploying to https://<USERNAME>.github.io/<REPO>
 # git push -f git@github.com:<USERNAME>/<REPO>.git master:gh-pages
-git push -f https://github.com/jschmidtnj/mywebsite2.git master:gh-pages
+git push -f https://github.com/jschmidtnj/designportfolio.git master:gh-pages
 
 cd -

@@ -1,5 +1,5 @@
 {
-  "name": "mywebsite2",
+  "name": "designportfolio",
   "version": "1.0.0",
   "description": "personal website using graphql and nuxt",
   "main": "index.js",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jschmidtnj/mywebsite2.git"
+    "url": "git+https://github.com/jschmidtnj/designportfolio.git"
   },
   "keywords": [
     "nuxt",
@@ -28,9 +28,9 @@
   "author": "Joshua Schmidt",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jschmidtnj/mywebsite2/issues"
+    "url": "https://github.com/jschmidtnj/designportfolio/issues"
   },
-  "homepage": "https://github.com/jschmidtnj/mywebsite2#readme",
+  "homepage": "https://github.com/jschmidtnj/designportfolio#readme",
   "dependencies": {
     "husky": "^2.1.0"
   }

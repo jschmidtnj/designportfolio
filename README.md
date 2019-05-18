@@ -1,2 +1,2 @@
-# mywebsite2
+# designportfolio
 personal website with nuxt and graphql api

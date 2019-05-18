@@ -1,7 +1,7 @@
 module.exports = {
   title: 'My Website Docs',
   description: 'Documentation for My Website',
-  dest: 'mywebsite2',
+  dest: 'designportfolio',
   head: [
     ['link', { rel: 'icon', href: `/logo.png` }],
     ['link', { rel: 'manifest', href: '/manifest.json' }],
@@ -14,16 +14,16 @@ module.exports = {
     ['meta', { name: 'msapplication-TileColor', content: '#000000' }]
   ],
   serviceWorker: true,
-  base: '/mywebsite2/',
+  base: '/designportfolio/',
   cleanURL: true,
   themeConfig: {
-    repo: 'jschmidtnj/mywebsite2',
+    repo: 'jschmidtnj/designportfolio',
     editLinks: true,
     docsDir: 'docs',
     docsBranch: 'master',
     nav: [
       { text: 'Guide', link: '/guide/' },
-      { text: 'Demo', link: 'https://mywebsite2.firebaseapp.com' }
+      { text: 'Demo', link: 'https://designportfolio.firebaseapp.com' }
     ],
     displayAllHeaders: true,
     sidebar: 'auto'

@@ -2,4 +2,4 @@
 
 ## clone
 
-First clone the github repository: `git clone https://github.com/jschmidtnj/mywebsite2`
+First clone the github repository: `git clone https://github.com/jschmidtnj/designportfolio`
