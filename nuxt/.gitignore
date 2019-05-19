@@ -3,3 +3,8 @@
 .netlify/
 .env
 now.json
+dist/
+.firebase/
+.nuxt/
+node_modules/
+static/sw.js
