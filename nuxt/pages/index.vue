@@ -2,14 +2,36 @@
   <section class="container">
     <div>
       <logo />
-      <h1 class="title">joshuawebsite</h1>
+      <h1 class="title">annette's website is awesome</h1>
       <h2 class="subtitle">personal website front-end nuxt</h2>
+      <b-alert show>Example alert</b-alert>
+      <no-ssr>
+        <font-awesome-icon
+          class="mr-2"
+          style="max-width: 16px;"
+          icon="search"
+        />Example search icon
+      </no-ssr>
+      <p>{{ count }}</p>
+      <div class="smallcontainer">
+        <img
+          src="https://mdbootstrap.com/img/Photos/Others/forest-sm.jpg"
+          alt="Avatar"
+          class="image"
+        />
+        <div class="overlay">
+          <div class="text">Hello World</div>
+        </div>
+      </div>
       <div class="links">
-        <a href="https://nuxtjs.org/" target="_blank" class="button--green"
+        <a
+          href="https://joshua-schmidt.github.io/designportfolio/"
+          target="_blank"
+          class="button--green"
           >Documentation</a
         >
         <a
-          href="https://github.com/nuxt/nuxt.js"
+          href="https://github.com/joshua-schmidt/designportfolio"
           target="_blank"
           class="button--grey"
           >GitHub</a
@@ -19,21 +41,70 @@
   </section>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from 'vue'
 import Logo from '~/components/Logo.vue'
 
-export default {
+export default Vue.extend({
   components: {
     Logo
+  },
+  data() {
+    return {
+      count: 0
+    }
   },
   mounted() {
     /* eslint-disable */
     console.log('hello world!')
+    setInterval(() => {
+      this.count++
+    }, 1000)
   }
-}
+})
 </script>
 
-<style>
+<style lang="scss" scoped>
+.smallcontainer {
+  position: relative;
+  width: 50%;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+  transition: .5s ease;
+  background-color: #008CBA;
+}
+
+.smallcontainer:hover .overlay {
+  opacity: 1;
+}
+
+.text {
+  color: white;
+  font-size: 20px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
 .container {
   margin: 0 auto;
   min-height: 100vh;

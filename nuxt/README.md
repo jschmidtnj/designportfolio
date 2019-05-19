@@ -21,6 +21,24 @@ $ npm run generate
 
 For detailed explanation on how things work, checkout [Nuxt.js docs](https://nuxtjs.org).
 
+## Format
+
+- autoformat vscode: <kbd>Shift</kbd> + <kbd>Option</kbd> + <kbd>F</kbd>
+- lint: `npm run lint`
+
+## Deploy
+
+``` bash
+# deploy to now.sh
+$ now
+
+# deploy to firebase
+$ firebase deploy
+
+# deploy to netlify
+# merge with master branch (see below)
+```
+
 ## Git Cheat sheet
 
 ``` bash
