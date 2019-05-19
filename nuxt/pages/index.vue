@@ -2,10 +2,6 @@
   <section class="container">
     <div>
       <logo />
-      <div>
-        User status:
-        <b-badge>{{ $auth.$state.loggedIn ? 'Logged In' : 'Guest' }}</b-badge>
-      </div>
       <h1 class="title">joshuawebsite</h1>
       <h2 class="subtitle">personal website front-end nuxt</h2>
       <div class="links">
@@ -32,19 +28,7 @@ export default {
   },
   mounted() {
     /* eslint-disable */
-    const query = `{
-      hello
-    }`
-    this.$axios
-      .post('http://localhost:8080/graphql', {
-        query: query
-      })
-      .then(res => {
-        console.log(`got ${JSON.stringify(res.data.data)}`)
-      })
-      .catch(err => {
-        console.log(`get failed: ${err}`)
-      })
+    console.log('hello world!')
   }
 }
 </script>
