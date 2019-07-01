@@ -1,0 +1,5 @@
+User-agent: * 
+Disallow: /admin/*
+Disallow: /emailtemplates/*
+Disallow: /calliback/*
+Sitemap: https://annettevonbrandis.com/sitemap.xml

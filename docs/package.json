@@ -17,7 +17,7 @@
     "type": "git",
     "url": "git+https://github.com/jschmidtnj/designportfolio.git"
   },
-  "author": "Joshua Schmidt",
+  "author": "Annette von Brandis",
   "license": "MIT",
   "dependencies": {
     "vuepress": "^0.14.11"

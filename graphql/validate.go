@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
-	jwt "github.com/dgrijalva/jwt-go"
 	"fmt"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
 )
 

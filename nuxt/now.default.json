@@ -1,5 +1,5 @@
 {
-  "name": "designportfolio",
+  "name": "annettewebsite",
   "version": 2,
   "builds": [
     {
@@ -10,7 +10,9 @@
   "build": {
     "env": {
       "SEOCONFIG": "{\"url\":\"https://url.com\",\"twitterhandle\":\"handle\",\"googleanalyticstrackingid\":\"UA-id-1\"}",
-      "AUTHCONFIG": "{\"google\":{\"client_id\":\"id\"}}"
+      "AUTHCONFIG": "{\"google\":{\"client_id\":\"id\"}}",
+      "APIURL": "https://api.example.com",
+      "AMPURL": "https://amp.example.com"
     }
   }
 }

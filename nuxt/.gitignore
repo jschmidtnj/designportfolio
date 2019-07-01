@@ -1,10 +1,12 @@
 # custom stuff
 .nuxt/
 .netlify/
-.env
-now.json
 dist/
 .firebase/
-.nuxt/
 node_modules/
 static/sw.js
+static/emailtemplates/*.html
+
+# sensitive stuff
+.env
+now.json

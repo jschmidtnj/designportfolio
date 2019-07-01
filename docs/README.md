@@ -10,5 +10,5 @@ features:
   details: Powered by Nuxt.js for the website and Vuepress.js for the documentation.
 - title: Performant
   details: Can be run as an SPA or multi-page appication, built over graphql.
-footer: 'MIT Licensed | Copyright © 2019-present Joshua Schmidt'
+footer: 'MIT Licensed | Copyright © 2019-present Annette von Brandis'
 ---

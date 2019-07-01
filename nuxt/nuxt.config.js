@@ -3,13 +3,19 @@ require('dotenv').config()
 
 const seodata = JSON.parse(process.env.SEOCONFIG)
 const authdata = JSON.parse(process.env.AUTHCONFIG)
+const apiurl = process.env.APIURL
+const ampurl = process.env.AMPURL
 
 module.exports = {
   mode: 'universal',
 
+  globalName: 'Annette von Brandis',
+
   env: {
     seoconfig: process.env.SEOCONFIG,
-    authconfig: process.env.AUTHCONFIG
+    authconfig: process.env.AUTHCONFIG,
+    apiurl: apiurl,
+    ampurl: ampurl
   },
 
   /*
@@ -73,7 +79,8 @@ module.exports = {
     { src: '~/plugins/font-awesome', ssr: false },
     { src: '~/plugins/vuelidate', ssr: false },
     { src: '~/plugins/vuex-persist', ssr: false },
-    { src: '~/plugins/axios', ssr: false }
+    { src: '~/plugins/axios', ssr: false },
+    { src: '~/plugins/toast', ssr: false }
   ],
 
   /*
@@ -100,18 +107,21 @@ module.exports = {
       local: {
         endpoints: {
           login: {
-            url: '/login',
-            method: 'post',
+            url: '/loginEmailPassword',
+            method: 'put',
             propertyName: 'token'
           },
-          logout: {
-            url: '/logout',
-            method: 'post'
-          },
           user: {
-            url: '/user',
+            url: '/graphql',
             method: 'get',
-            propertyName: 'user'
+            params: {
+              query: '{account{id email type emailverified}}'
+            },
+            propertyName: 'data.account'
+          },
+          logout: {
+            url: '/logoutEmailPassword',
+            method: 'put'
           }
         }
       },
@@ -136,7 +146,7 @@ module.exports = {
   },
 
   /*
-   ** generate 404 page
+   ** generate config
    */
   generate: {
     fallback: '404.html'
@@ -154,7 +164,7 @@ module.exports = {
    */
   axios: {
     // See https://github.com/nuxt-community/axios-module#options
-    baseURL: 'http://localhost:8080'
+    baseURL: apiurl
   },
 
   /*

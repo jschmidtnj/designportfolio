@@ -1,4 +1,4 @@
-# joshuawebsite
+# annettewebsite
 
 > personal website front-end nuxt
 
@@ -9,14 +9,14 @@
 $ npm install
 
 # serve with hot reload at localhost:3000
-$ npm run dev
+$ yarn dev
 
 # build for production and launch server
-$ npm run build
+$ yarn build
 $ npm start
 
 # generate static project
-$ npm run generate
+$ yarn generate
 ```
 
 For detailed explanation on how things work, checkout [Nuxt.js docs](https://nuxtjs.org).
@@ -24,7 +24,7 @@ For detailed explanation on how things work, checkout [Nuxt.js docs](https://nux
 ## Format
 
 - autoformat vscode: <kbd>Shift</kbd> + <kbd>Option</kbd> + <kbd>F</kbd>
-- lint: `npm run lint`
+- lint: `yarn lint`
 
 ## Deploy
 
@@ -66,3 +66,12 @@ $ git merge frontend
 # push changes to github - master branch
 $ git push origin master
 ```
+
+## now.sh and cloudflare
+
+see [this](https://zeit.co/docs/v1/guides/how-to-use-cloudflare) for more info.  
+now.sh doesn't work currently because we need an ssr config. instead I'm using heroku (or you can use gcp)
+
+## heroku
+
+deploy to heroku using the script. see [this](https://support.cloudflare.com/hc/en-us/articles/205893698-Configure-Cloudflare-and-Heroku-over-HTTPS) for connecting to cloudflare. also look at [this](https://nuxtjs.org/faq/heroku-deployment/) first.

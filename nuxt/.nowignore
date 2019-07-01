@@ -1,0 +1,8 @@
+# custom stuff
+.nuxt/
+.netlify/
+dist/
+.firebase/
+.nuxt/
+node_modules/
+static/sw.js
