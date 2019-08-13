@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"

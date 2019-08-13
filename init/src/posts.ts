@@ -137,7 +137,8 @@ export const initializeposts = (db, postindexname, postdoctype) => {
                                   .putMapping({
                                     index: postindexname,
                                     type: postdoctype,
-                                    body: postmappings
+                                    body: postmappings,
+                                    include_type_name: true
                                   })
                                   .then(res5 => {
                                     console.log(
