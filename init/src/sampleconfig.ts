@@ -19,5 +19,5 @@ export const codes = {
 
 export const mongoconfig = {
   uri: 'mongouri',
-  dbname: 'testing'
+  dbname: 'website'
 }

@@ -1,60 +1,71 @@
 <template>
   <section class="container">
     <div>
-      <logo />
-      <h1>Under Construction</h1>
-      <h2>Please check again later</h2>
+      <b-jumbotron header="Annette von Brandis" lead="Designer" class="mt-4">
+        <b-button variant="primary" href="/about">About</b-button>
+      </b-jumbotron>
+      <h3>Blogs</h3>
+      <tile-rows type="blog" />
+      <h3>Projects</h3>
+      <tile-rows type="project" />
     </div>
   </section>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import Logo from '~/components/Logo.vue'
-
+import TileRows from '~/components/TileRows.vue'
+// @ts-ignore
+const seo = JSON.parse(process.env.seoconfig)
 export default Vue.extend({
   components: {
-    Logo
+    TileRows
   },
   data() {
     return {}
   },
   // @ts-ignore
   head() {
+    const title = 'Home'
+    const description =
+      'custom blog and project descriptions for anything in tech and beyond'
+    const image = `${seo.url}/icon.png`
     return {
-      title: 'Home'
+      title: title,
+      meta: [
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        {
+          property: 'og:image',
+          content: image
+        },
+        { name: 'twitter:title', content: title },
+        {
+          name: 'twitter:description',
+          content: description
+        },
+        {
+          name: 'twitter:image',
+          content: image
+        },
+        { hid: 'description', name: 'description', content: description }
+      ],
+      __dangerouslyDisableSanitizers: ['script'],
+      script: [
+        {
+          innerHTML: JSON.stringify({
+            '@context': 'http://schema.org',
+            '@type': 'WebPage',
+            name: title,
+            description: description
+          }),
+          type: 'application/ld+json'
+        }
+      ]
     }
   },
-  mounted() {
-    /* eslint-disable */
-    console.log('hello world!')
-  }
+  mounted() {}
 })
 </script>
 
-<style lang="scss" scoped>
-.text {
-  color: white;
-  font-size: 20px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  -webkit-transform: translate(-50%, -50%);
-  -ms-transform: translate(-50%, -50%);
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.container {
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.links {
-  padding-top: 15px;
-}
-</style>
+<style lang="scss"></style>

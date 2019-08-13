@@ -1,109 +1,33 @@
 branches:
   only:
-    - master
+  - master
 matrix:
   include:
-  - name: Android Build
-    language: android
-    jdk: openjdk8
-    android:
-      components:
-      - build-tools-28.0.3
-      - android-28
-    before_script:
-    - cd flutter
-    - openssl aes-256-cbc -K $encrypted_799987a421b6_key -iv $encrypted_799987a421b6_iv 
-      -in secrets.tar.enc -out secrets.tar -d
-    - tar xvf secrets.tar
-    - if [ ! -d "flutter" ] ; then git clone https://github.com/flutter/flutter.git -b stable; fi;
-    - export PATH=`pwd`/flutter/bin:`pwd`/flutter/bin/cache/dart-sdk/bin:$PATH
-    - gem install bundler && cd android && bundle install && cd ..
-    script:
-    - flutter packages get
-    - flutter pub run flutter_launcher_icons:main
-    - flutter test
-    - build_number=$(($TRAVIS_BUILD_NUMBER + 100))
-    - echo "build number " $build_number
-    - flutter build apk --build-number=$build_number
-    - cd android && bundle exec fastlane alpha
-    cache:
-      bundler: true
-      directories:
-      - "$HOME/.pub-cache"
-      - "$HOME/.gradle/caches/"
-      - "$HOME/.gradle/wrapper/"
-      - "$HOME/.android/build-cache"
-      - "$HOME/flutter"
-  - name: OSX Desktop Build
-    language: node_js
-    os: osx
-    node_js:
-    - "10"
-    cache: yarn
-    before_install:
-    - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.16.0
-    - export PATH="$HOME/.yarn/bin:$PATH"
-    before_script:
-    - cd electron/src
-    - openssl aes-256-cbc -K $encrypted_7db527e407fc_key -iv $encrypted_7db527e407fc_iv 
-      -in config.ts.enc -out config.ts -d 
-    - cd ..
-    - yarn install
-    - yarn build
-    script:
-    - yarn start
-  - name: Linux Desktop Build
-    language: node_js
-    os: linux
-    node_js:
-    - "10"
-    cache: yarn
-    before_install:
-    - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.16.0
-    - export PATH="$HOME/.yarn/bin:$PATH"
-    before_script:
-    - cd electron/src
-    - openssl aes-256-cbc -K $encrypted_7db527e407fc_key -iv $encrypted_7db527e407fc_iv 
-      -in config.ts.enc -out config.ts -d 
-    - cd ..
-    - yarn install
-    - yarn build
-    script:
-    - yarn start
-  - name: Windows Desktop Build
-    os: windows
-    language: bash
-    cache: yarn
-    before_script:
-    - choco install nodejs
-    - choco install yarn
-    - cd electron/src
-    - openssl aes-256-cbc -K $encrypted_7db527e407fc_key -iv $encrypted_7db527e407fc_iv 
-      -in config.ts.enc -out config.ts -d 
-    - cd ..
-    script:
-    - ./windowsbuild.bat
-  exclude:
-  - name: iOS Build
-    os: osx
+  - name: Api Build
     language: generic
-    osx_image: xcode10.2
+    cache:
+      directories:
+      # We cache the SDK so we don't have to download it again on subsequent builds.
+      - $HOME/google-cloud-sdk
+    env:
+      global:
+      # Do not prompt for user input when using any SDK methods.
+      - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+    before_install:
+    - if ! git diff --name-only $TRAVIS_COMMIT_RANGE | grep graphql/; then exit; fi;
+    install:
+    - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; 
+      then rm -rf $HOME/google-cloud-sdk;
+      export CLOUDSDK_CORE_DISABLE_PROMPTS=1;
+      curl https://sdk.cloud.google.com | bash > /dev/null;
+      fi
+    - source $HOME/google-cloud-sdk/path.bash.inc
+    - gcloud version
     before_script:
-    - cd flutter
-    - openssl aes-256-cbc -K $encrypted_799987a421b6_key -iv $encrypted_799987a421b6_iv 
+    - cd graphql
+    - openssl aes-256-cbc -K $encrypted_536f66e3527f_key -iv $encrypted_536f66e3527f_iv
       -in secrets.tar.enc -out secrets.tar -d
     - tar xvf secrets.tar
-    - if [ ! -d "flutter" ] ; then git clone https://github.com/flutter/flutter.git -b stable; fi;
-    - export PATH=`pwd`/flutter/bin:`pwd`/flutter/bin/cache/dart-sdk/bin:$PATH
-    - gem install bundler && cd ios && bundle install && cd ..
     script:
-    - flutter packages get
-    - flutter pub run flutter_launcher_icons:main
-    - flutter test
-    - cd ios && bundle exec fastlane internal
-    cache:
-      cocoapods: true
-      bundler: true
-      directories:
-      - "$HOME/.pub-cache"
-      - "$HOME/flutter"
+    - gcloud auth activate-service-account --key-file serviceaccount.json
+    - gcloud --quiet --project designportfolio app deploy app.yaml

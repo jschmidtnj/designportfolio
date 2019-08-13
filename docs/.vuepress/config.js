@@ -23,7 +23,7 @@ module.exports = {
     docsBranch: 'master',
     nav: [
       { text: 'Guide', link: '/guide/' },
-      { text: 'Demo', link: 'https://designportfolio.firebaseapp.com' }
+      { text: 'Prod', link: 'https://annettevonbrandis.com' }
     ],
     displayAllHeaders: true,
     sidebar: 'auto'

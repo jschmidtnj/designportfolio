@@ -7,8 +7,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "precommit": "npm run precommit --prefix nuxt && gofmt -w graphql && npm run precommit --prefix amp && npm run precommit --prefix init && npm run precommit --prefix docs && git add -A",
-    "init": "yarn install && cd nuxt && yarn install && cd ../docs && yarn install && cd ../amp && yarn install && cd ../init && yarn install && cd ..",
+    "precommit": "bash ./precommit.sh",
+    "init": "bash ./init.sh",
+    "update": "bash ./update.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "husky": {
@@ -26,7 +27,7 @@
     "graphql",
     "vuepress"
   ],
-  "author": "Annette von Brandis",
+  "author": "Joshua Schmidt",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/jschmidtnj/designportfolio/issues"

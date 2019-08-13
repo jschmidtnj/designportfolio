@@ -4,17 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/sendgrid/rest"
-	"github.com/sendgrid/sendgrid-go"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
-)
 
-var sendEmail = "noreply@annettevonbrandis.com"
+	"github.com/PuerkitoBio/goquery"
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/sendgrid/rest"
+	"github.com/sendgrid/sendgrid-go"
+)
 
 var sendgridAPIUrl = "https://api.sendgrid.com"
 
@@ -27,7 +26,7 @@ func sendEmailVerification(email string) (*rest.Response, error) {
 		"verify": true,
 		"StandardClaims": jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
-			Issuer:    "Annette von Brandis",
+			Issuer:    jwtIssuer,
 		},
 	})
 	tokenString, err := token.SignedString(jwtSecret)
@@ -46,7 +45,7 @@ func sendEmailVerification(email string) (*rest.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	doc.Find("#verify").SetAttr("href", websiteURL+"/login?verify=true?token="+tokenString)
+	doc.Find("#verify").SetAttr("href", websiteURL+"/login?verify=true&token="+tokenString)
 	template, err := doc.Html()
 	request := sendgrid.GetRequest(sendgridAPIKey, sendgridAPIPath+"/mail/send", sendgridAPIUrl)
 	request.Method = "POST"
@@ -73,7 +72,7 @@ func sendEmailVerification(email string) (*rest.Response, error) {
 		]
 	}
 	`
-	body = fmt.Sprintf(body, email, sendEmail)
+	body = fmt.Sprintf(body, email, serviceEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -92,10 +91,14 @@ func sendEmailVerification(email string) (*rest.Response, error) {
 	return response, err
 }
 
+/**
+ * @api {put} /sendResetEmail Send reset email
+ * @apiVersion 0.0.1
+ * @apiParam {String} email User email
+ * @apiSuccess {String} message Success message for email sent
+ * @apiGroup emails
+ */
 func sendPasswordResetEmail(response http.ResponseWriter, request *http.Request) {
-	if !manageCors(&response, request) {
-		return
-	}
 	if request.Method != http.MethodPut {
 		handleError("reset http method not PUT", http.StatusBadRequest, response)
 		return
@@ -115,14 +118,28 @@ func sendPasswordResetEmail(response http.ResponseWriter, request *http.Request)
 		handleError("no email provided", http.StatusBadRequest, response)
 		return
 	}
+	email, ok := resetdata["email"].(string)
+	if !ok {
+		handleError("email cannot be cast to string", http.StatusBadRequest, response)
+		return
+	}
+	recaptchatoken, ok := resetdata["recaptcha"].(string)
+	if !ok {
+		handleError("recaptcha token cannot be cast to string", http.StatusBadRequest, response)
+		return
+	}
+	err = verifyRecaptcha(recaptchatoken, mainRecaptchaSecret)
+	if err != nil {
+		handleError("recaptcha error: "+err.Error(), http.StatusUnauthorized, response)
+		return
+	}
 	expirationTime := time.Now().Add(time.Duration(tokenExpiration) * time.Hour)
-	var email = resetdata["email"].(string)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": email,
 		"reset": true,
 		"StandardClaims": jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
-			Issuer:    "Annette von Brandis",
+			Issuer:    jwtIssuer,
 		},
 	})
 	tokenString, err := token.SignedString(jwtSecret)
@@ -145,7 +162,7 @@ func sendPasswordResetEmail(response http.ResponseWriter, request *http.Request)
 		handleError(err.Error(), http.StatusBadRequest, response)
 		return
 	}
-	doc.Find("#reset").SetAttr("href", websiteURL+"/login?verify=true?token="+tokenString)
+	doc.Find("#reset").SetAttr("href", websiteURL+"/reset?reset=true&token="+tokenString)
 	template, err := doc.Html()
 	req := sendgrid.GetRequest(sendgridAPIKey, sendgridAPIPath+"/mail/send", sendgridAPIUrl)
 	req.Method = "POST"
@@ -172,7 +189,7 @@ func sendPasswordResetEmail(response http.ResponseWriter, request *http.Request)
 		]
 	}
 	`
-	body = fmt.Sprintf(body, email, sendEmail)
+	body = fmt.Sprintf(body, email, serviceEmail)
 	if err != nil {
 		handleError(err.Error(), http.StatusBadRequest, response)
 		return
@@ -203,12 +220,19 @@ func sendPasswordResetEmail(response http.ResponseWriter, request *http.Request)
 	response.Write([]byte(`{"message":"reset email sent"}`))
 }
 
+/**
+ * @api {put} /sendTestEmail Send test email
+ * @apiVersion 0.0.1
+ * @apiSuccess {String} message Success message for email sent
+ * @apiGroup emails
+ */
 func sendTestEmail(response http.ResponseWriter, request *http.Request) {
-	if !manageCors(&response, request) {
-		return
-	}
 	if request.Method != http.MethodPost {
 		handleError("register http method not POST", http.StatusBadRequest, response)
+		return
+	}
+	if _, err := validateAdmin(getAuthToken(request)); err != nil {
+		handleError("auth error: "+err.Error(), http.StatusBadRequest, response)
 		return
 	}
 	var emaildata map[string]interface{}

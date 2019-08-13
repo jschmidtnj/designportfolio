@@ -1,5 +1,5 @@
 {
-  "name": "annettewebsite",
+  "name": "joshuawebsite",
   "version": 2,
   "builds": [
     {
@@ -7,12 +7,14 @@
       "use": "@now/static-build"
     }
   ],
+  "alias": "example.com",
   "build": {
     "env": {
       "SEOCONFIG": "{\"url\":\"https://url.com\",\"twitterhandle\":\"handle\",\"googleanalyticstrackingid\":\"UA-id-1\"}",
       "AUTHCONFIG": "{\"google\":{\"client_id\":\"id\"}}",
       "APIURL": "https://api.example.com",
-      "AMPURL": "https://amp.example.com"
+      "AMPURL": "https://amp.example.com",
+      "RECAPTCHASITEKEY": "sitekey"
     }
   }
 }

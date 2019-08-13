@@ -1,21 +1,23 @@
 const pkg = require('./package')
 require('dotenv').config()
-
 const seodata = JSON.parse(process.env.SEOCONFIG)
-const authdata = JSON.parse(process.env.AUTHCONFIG)
 const apiurl = process.env.APIURL
 const ampurl = process.env.AMPURL
+const recaptchasitekey = process.env.RECAPTCHASITEKEY
 
 module.exports = {
-  mode: 'universal',
+  mode: 'spa',
 
-  globalName: 'Annette von Brandis',
+  globalName: pkg.author,
 
   env: {
     seoconfig: process.env.SEOCONFIG,
+    githuburl: pkg.repository.url,
     authconfig: process.env.AUTHCONFIG,
     apiurl: apiurl,
-    ampurl: ampurl
+    ampurl: ampurl,
+    shortlinkurl: process.env.SHORTLINKURL,
+    recaptchasitekey: recaptchasitekey
   },
 
   /*
@@ -26,35 +28,77 @@ module.exports = {
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { hid: 'description', name: 'description', content: pkg.description },
       // OpenGraph Data
-      { property: 'og:title', content: 'Find Vericts' },
-      { property: 'og:site_name', content: 'Find Vericts' },
+      { property: 'og:site_name', content: pkg.author },
       // The list of types is available here: http://ogp.me/#types
       { property: 'og:type', content: 'website' },
-      {
-        property: 'og:image',
-        content: `${seodata.url}/opengraph.png`
-      },
-      { property: 'og:description', content: pkg.description },
       // Twitter card
-      { name: 'twitter:card', content: 'summary' },
+      { name: 'twitter:card', content: 'summary_large_image' },
       {
         name: 'twitter:site',
-        content: seodata.url
+        content: `@${seodata.twitterhandle}`
       },
-      { name: 'twitter:title', content: 'Find Vericts' },
-      {
-        name: 'twitter:description',
-        content: pkg.description
-      },
-      { name: 'twitter:creator', content: `@${seodata.twitterhandle}` },
-      {
-        name: 'twitter:image:src',
-        content: `${seodata.url}/twitter.png`
-      }
+      { name: 'twitter:creator', content: `@${seodata.twitterhandle}` }
     ],
-    link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
+    link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+    __dangerouslyDisableSanitizers: ['script'],
+    script: [
+      {
+        innerHTML: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: pkg.author,
+          url: seodata.url,
+          logo: `${seodata.url}/icon.png`,
+          contactPoint: {
+            '@type': 'ContactPoint',
+            email: seodata.email,
+            contactType: 'customer support',
+            url: `${seodata.url}/about`
+          },
+          sameAs: [
+            `https://twitter.com/${seodata.twitterhandle}`,
+            seodata.facebook,
+            seodata.linkedin,
+            seodata.github
+          ]
+        }),
+        type: 'application/ld+json'
+      },
+      {
+        innerHTML: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          email: seodata.email,
+          image: 'me.jpg',
+          jobTitle: seodata.jobtitle,
+          name: pkg.author,
+          birthDate: seodata.birthday,
+          gender: seodata.gender,
+          url: seodata.url,
+          sameAs: [
+            `https://twitter.com/${seodata.twitterhandle}`,
+            seodata.facebook,
+            seodata.linkedin,
+            seodata.github
+          ]
+        }),
+        type: 'application/ld+json'
+      },
+      {
+        innerHTML: JSON.stringify({
+          '@context': 'http://schema.org',
+          '@type': 'WebSite',
+          url: seodata.url,
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: `${seodata.url}/blogs?phrase={query}`,
+            'query-input': 'required name=query'
+          }
+        }),
+        type: 'application/ld+json'
+      }
+    ]
   },
 
   /*
@@ -80,7 +124,10 @@ module.exports = {
     { src: '~/plugins/vuelidate', ssr: false },
     { src: '~/plugins/vuex-persist', ssr: false },
     { src: '~/plugins/axios', ssr: false },
-    { src: '~/plugins/toast', ssr: false }
+    { src: '~/plugins/toast', ssr: false },
+    { src: '~/plugins/select', ssr: false },
+    { src: '~/plugins/recaptcha', ssr: false },
+    { src: '~/plugins/scroll-reveal', ssr: false }
   ],
 
   /*
@@ -95,48 +142,8 @@ module.exports = {
     '@nuxtjs/style-resources',
     '@nuxtjs/dotenv',
     '@nuxtjs/sitemap',
-    '@nuxtjs/google-analytics',
-    '@nuxtjs/auth'
+    '@nuxtjs/google-analytics'
   ],
-
-  /*
-   ** auth config
-   */
-  auth: {
-    strategies: {
-      local: {
-        endpoints: {
-          login: {
-            url: '/loginEmailPassword',
-            method: 'put',
-            propertyName: 'token'
-          },
-          user: {
-            url: '/graphql',
-            method: 'get',
-            params: {
-              query: '{account{id email type emailverified}}'
-            },
-            propertyName: 'data.account'
-          },
-          logout: {
-            url: '/logoutEmailPassword',
-            method: 'put'
-          }
-        }
-      },
-      google: {
-        client_id: authdata.google.client_id
-      }
-    },
-    redirect: {
-      callback: '/callback',
-      logout: '/login',
-      login: '/login',
-      home: '/account'
-    },
-    resetOnError: true
-  },
 
   /*
    ** google analytics config
@@ -156,7 +163,7 @@ module.exports = {
    ** scss global config
    */
   styleResources: {
-    scss: ['~assets/styles/bootstrap.scss']
+    scss: ['~assets/styles/global.scss']
   },
 
   /*

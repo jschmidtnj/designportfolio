@@ -10,8 +10,8 @@
               @keyup.enter.native="
                 evt => {
                   evt.preventDefault()
-                  pageNum = 1
-                  searchPosts(currentPage)
+                  currentPage = 1
+                  searchPosts()
                 }
               "
             ></b-form-input>
@@ -20,8 +20,8 @@
                 :disabled="!search"
                 @click="
                   search = ''
-                  pageNum = 1
-                  searchPosts(currentPage)
+                  currentPage = 1
+                  searchPosts()
                 "
                 >Clear</b-button
               >
@@ -37,7 +37,7 @@
               :options="sortOptions"
               @change="
                 currentPage = 1
-                searchPosts(currentPage)
+                searchPosts()
               "
             >
               <option slot="first" :value="null">-- none --</option>
@@ -48,7 +48,7 @@
               :disabled="!sortBy"
               @change="
                 currentPage = 1
-                searchPosts(currentPage)
+                searchPosts()
               "
             >
               <option :value="false">Asc</option>
@@ -64,13 +64,20 @@
             :options="pageOptions"
             @change="
               currentPage = 1
-              searchPosts(currentPage)
+              searchPosts()
             "
           ></b-form-select>
         </b-form-group>
       </b-col>
     </b-row>
-    <b-table show-empty stacked="md" :items="items" :fields="fields">
+    <b-table
+      show-empty
+      stacked="md"
+      :items="items"
+      :fields="fields"
+      :no-local-sorting="true"
+      @sort-changed="sort"
+    >
       <template slot="title" slot-scope="row">{{ row.value }}</template>
       <template slot="author" slot-scope="row">{{ row.value }}</template>
       <template slot="date" slot-scope="row">{{
@@ -78,7 +85,7 @@
       }}</template>
       <template slot="views" slot-scope="row">{{ row.value }}</template>
       <template slot="read" slot-scope="row">
-        <a class="btn btn-primary btn-sm" :href="`/blog?id=${row.item.id}`"
+        <a class="btn btn-primary btn-sm" :href="`/blog/${row.item.id}`"
           >Read</a
         >
       </template>
@@ -90,7 +97,12 @@
           :total-rows="totalRows"
           :per-page="perPage"
           class="my-0"
-          @change="searchPosts"
+          @change="
+            newpage => {
+              currentPage = newpage
+              searchPosts()
+            }
+          "
         ></b-pagination>
       </b-col>
     </b-row>
@@ -101,6 +113,8 @@
 import Vue from 'vue'
 import { format } from 'date-fns'
 import { validTypes } from '~/assets/config'
+// @ts-ignore
+const seo = JSON.parse(process.env.seoconfig)
 export default Vue.extend({
   props: {
     type: {
@@ -149,7 +163,6 @@ export default Vue.extend({
       pageOptions: [5, 10, 15],
       sortBy: null,
       sortDesc: false,
-      sortDirection: 'asc',
       search: ''
     }
   },
@@ -163,16 +176,65 @@ export default Vue.extend({
         })
     }
   },
+  // @ts-ignore
+  head() {
+    const title = `Search ${this.type}`
+    const description = `search for ${this.type}s, by name, views, etc`
+    const image = `${seo.url}/icon.png`
+    return {
+      title: title,
+      meta: [
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        {
+          property: 'og:image',
+          content: image
+        },
+        { name: 'twitter:title', content: title },
+        {
+          name: 'twitter:description',
+          content: description
+        },
+        {
+          name: 'twitter:image',
+          content: image
+        },
+        { hid: 'description', name: 'description', content: description }
+      ]
+    }
+  },
   mounted() {
+    if (this.$route.query) {
+      if (this.$route.query.phrase) this.search = this.$route.query.phrase
+      if (this.$route.query.perpage)
+        this.perPage = parseInt(this.$route.query.perpage)
+      if (this.$route.query.currentpage)
+        this.currentPage = parseInt(this.$route.query.currentpage)
+      if (this.$route.query.sortdescending)
+        this.sortDesc = this.$route.query.sortdescending === 'true'
+      if (
+        this.$route.query.sortby &&
+        this.fields.some(field => field.key === this.$route.query.sortby)
+      )
+        this.sortBy = this.$route.query.sortby
+    }
     this.searchPosts(this.currentPage)
   },
   methods: {
+    sort(ctx) {
+      this.sortBy = ctx.sortBy //   ==> Field key for sorting by (or null for no sorting)
+      this.sortDesc = ctx.sortDesc // ==> true if sorting descending, false otherwise
+      this.currentPage = 1
+      this.searchPosts(this.currentPage)
+    },
     updateCount() {
       this.$axios
         .get('/countPosts', {
           params: {
             searchterm: this.search,
-            type: this.type
+            type: this.type,
+            tags: [].join(',tags='),
+            categories: [].join(',categories=')
           }
         })
         .then(res => {
@@ -197,30 +259,43 @@ export default Vue.extend({
           }
         })
         .catch(err => {
+          let message = `got error: ${err}`
+          if (err.response && err.response.data) {
+            message = err.response.data.message
+          }
           this.$toasted.global.error({
-            message: `got error: ${err}`
+            message: message
           })
         })
     },
-    searchPosts(pageNum) {
+    searchPosts() {
       this.updateCount()
       const sort = this.sortBy ? this.sortBy : this.sortOptions[0].value
       this.$axios
         .get('/graphql', {
           params: {
-            query: `{posts(type:"${this.type}",perpage:${
+            query: `{posts(type:"${encodeURIComponent(this.type)}",perpage:${
               this.perPage
-            },page:${pageNum - 1},searchterm:"${
+            },page:${this.currentPage - 1},searchterm:"${encodeURIComponent(
               this.search
-            }",sort:"${sort}",ascending:${!this
-              .sortDesc}){title views id author date}}`
+            )}",sort:"${encodeURIComponent(sort)}",ascending:${!this
+              .sortDesc},tags:${JSON.stringify([])},categories:${JSON.stringify(
+              []
+            )},cache:${(!(
+              this.$store.state.auth.user &&
+              this.$store.state.auth.user.type === 'admin'
+            )).toString()}){title views id author date}}`
           }
         })
         .then(res => {
           if (res.status === 200) {
             if (res.data) {
               if (res.data.data && res.data.data.posts) {
-                this.items = res.data.data.posts
+                const posts = res.data.data.posts
+                posts.forEach(post => {
+                  post.author = decodeURIComponent(post.author)
+                })
+                this.items = posts
               } else if (res.data.errors) {
                 this.$toasted.global.error({
                   message: `found errors: ${JSON.stringify(res.data.errors)}`
@@ -242,8 +317,12 @@ export default Vue.extend({
           }
         })
         .catch(err => {
+          let message = `got error: ${err}`
+          if (err.response && err.response.data) {
+            message = err.response.data.message
+          }
           this.$toasted.global.error({
-            message: err
+            message: message
           })
         })
     },

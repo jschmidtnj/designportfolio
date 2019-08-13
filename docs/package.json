@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "vuepress dev",
     "precommit": "echo \"no precommit for docs\"",
-    "build": "vuepress build",
-    "deploy:linux": "./deploydocs.sh",
-    "deploy:windows": "deploydocs.sh",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "generate": "vuepress build",
+    "pwa": "pwabuilder --manifest .vuepress/public/manifest.json --image .vuepress/public/logo.png --platforms web",
+    "build": "sh ./builddocs.sh",
+    "api": "apidoc -i ../graphql/ -o apidocs/",
+    "deploy": "yarn build && sh ./deploydocs.sh",
+    "test": "echo \"Error: no test specified\""
   },
   "keywords": [
     "vuepress"
@@ -20,6 +22,10 @@
   "author": "Annette von Brandis",
   "license": "MIT",
   "dependencies": {
+    "pwabuilder": "^2.0.3-rc.0",
     "vuepress": "^0.14.11"
+  },
+  "devDependencies": {
+    "apidoc": "^0.17.7"
   }
 }

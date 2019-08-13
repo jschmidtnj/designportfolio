@@ -1,0 +1,20 @@
+{
+  "name": "annetteshortlink",
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@now/static-build"
+    }
+  ],
+  "alias": "ex.ml",
+  "build": {
+    "env": {
+      "SEOCONFIG": "{\"url\":\"https://url.com\",\"twitterhandle\":\"handle\",\"googleanalyticstrackingid\":\"UA-id-1\"}",
+      "AUTHCONFIG": "{\"google\":{\"client_id\":\"id\"}}",
+      "APIURL": "https://api.example.com",
+      "MAINURL": "https://example.com",
+      "RECAPTCHASITEKEY": "sitekey"
+    }
+  }
+}

@@ -1,6 +1,5 @@
 export const cloudStorageURLs = {
-  blog: 'https://storage.googleapis.com/designportfolioimagestorage/blogs',
-  project: 'https://storage.googleapis.com/designportfolioimagestorage/projects'
+  posts: 'https://cdn.annettevonbrandis.com'
 }
 
 export const codes = {
@@ -17,3 +16,13 @@ export const toasts = {
 }
 
 export const validTypes = ['blog', 'project']
+
+export const regex = {
+  password: /^$|^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/,
+  hexcode: /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i
+}
+
+export const options = {
+  categoryOptions: ['technology', 'webdesign'],
+  tagOptions: ['vue', 'nuxt']
+}

@@ -1,22 +1,28 @@
 package main
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"encoding/json"
+
+	"cloud.google.com/go/storage"
 	"github.com/graphql-go/graphql"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
+
 	// medium "github.com/medium/medium-sdk-go"
+	"net/http"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/go-redis/redis"
 	"github.com/olivere/elastic"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"google.golang.org/api/option"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var jwtSecret []byte
@@ -31,7 +37,7 @@ var mongoClient *mongo.Client
 
 var ctxMongo context.Context
 
-var database = "testing"
+var mainDatabase = "website"
 
 var userCollection *mongo.Collection
 
@@ -44,6 +50,10 @@ var blogMongoName = "blogs"
 var projectCollection *mongo.Collection
 
 var projectMongoName = "projects"
+
+var shortLinkCollection *mongo.Collection
+
+var shortLinkMongoName = "shortlink"
 
 var elasticClient *elastic.Client
 
@@ -66,11 +76,19 @@ var ctxStorage context.Context
 
 var storageClient *storage.Client
 
-var imageBucket *storage.BucketHandle
+var storageBucket *storage.BucketHandle
 
-var blogImageIndex = "blogs"
+var blogImageIndex = "blogimages"
 
-var projectImageIndex = "projects"
+var projectImageIndex = "projectimages"
+
+var blogFileIndex = "blogfiles"
+
+var projectFileIndex = "projectfiles"
+
+var progressiveImageSize = 30
+
+var progressiveImageBlurAmount = 20.0
 
 var logger *zap.Logger
 
@@ -78,14 +96,40 @@ type tokenKeyType string
 
 var tokenKey tokenKeyType
 
+var redisClient *redis.Client
+
+var cacheTime time.Duration
+
+var validHexcode *regexp.Regexp
+
+var postSearchFields = []string{
+	"title",
+	"author",
+	"caption",
+	"content",
+}
+
+var mainRecaptchaSecret string
+
+var shortlinkRecaptchaSecret string
+
+var shortlinkURL string
+
+var serviceEmail string
+
+var mode string
+
 // var mediumClient *medium.Medium
 
 // var mediumUser *medium.User
 
+/**
+ * @api {get} /hello Test rest request
+ * @apiVersion 0.0.1
+ * @apiSuccess {String} message Hello message
+ * @apiGroup misc
+ */
 func hello(response http.ResponseWriter, request *http.Request) {
-	if !manageCors(&response, request) {
-		return
-	}
 	response.Header().Set("content-type", "application/json")
 	response.Write([]byte(`{"message":"Hello!"}`))
 }
@@ -125,6 +169,8 @@ func main() {
 		logger.Fatal(err.Error())
 	}
 	sendgridAPIKey = os.Getenv("SENDGRIDAPIKEY")
+	serviceEmail = os.Getenv("SERVICEEMAIL")
+	mode = os.Getenv("MODE")
 	websiteURL = os.Getenv("WEBSITEURL")
 	ctxMongo, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	cancel()
@@ -133,9 +179,10 @@ func main() {
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
-	userCollection = mongoClient.Database(database).Collection(userMongoName)
-	projectCollection = mongoClient.Database(database).Collection(projectMongoName)
-	blogCollection = mongoClient.Database(database).Collection(blogMongoName)
+	userCollection = mongoClient.Database(mainDatabase).Collection(userMongoName)
+	projectCollection = mongoClient.Database(mainDatabase).Collection(projectMongoName)
+	blogCollection = mongoClient.Database(mainDatabase).Collection(blogMongoName)
+	shortLinkCollection = mongoClient.Database(mainDatabase).Collection(shortLinkMongoName)
 	elasticuri := os.Getenv("ELASTICURI")
 	elasticClient, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(elasticuri))
 	if err != nil {
@@ -155,14 +202,39 @@ func main() {
 		logger.Fatal(err.Error())
 	}
 	bucketName := os.Getenv("STORAGEBUCKETNAME")
-	imageBucket = storageClient.Bucket(bucketName)
+	storageBucket = storageClient.Bucket(bucketName)
 	gcpprojectid, ok := storageconfigjson["project_id"].(string)
 	if !ok {
 		logger.Fatal("could not cast gcp project id to string")
 	}
-	if err := imageBucket.Create(ctxStorage, gcpprojectid, nil); err != nil {
+	if err := storageBucket.Create(ctxStorage, gcpprojectid, nil); err != nil {
 		logger.Info(err.Error())
 	}
+	redisAddress := os.Getenv("REDISADDRESS")
+	redisPassword := os.Getenv("REDISPASSWORD")
+	cacheSeconds, err := strconv.Atoi(os.Getenv("CACHETIME"))
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+	cacheTime = time.Duration(cacheSeconds) * time.Second
+	redisClient = redis.NewClient(&redis.Options{
+		Addr:     redisAddress,
+		Password: redisPassword,
+		DB:       0, // use default DB
+	})
+	pong, err := redisClient.Ping().Result()
+	if err != nil {
+		logger.Fatal(err.Error())
+	} else {
+		logger.Info("connected to redis cache: " + pong)
+	}
+	validHexcode, err = regexp.Compile("(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)")
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+	mainRecaptchaSecret = os.Getenv("MAINRECAPTCHASECRET")
+	shortlinkRecaptchaSecret = os.Getenv("SHORTLINKRECAPTCHASECRET")
+	shortlinkURL = os.Getenv("SHORTLINKURL")
 	/*
 		mediumAccessToken := os.Getenv("MEDIUMACCESSTOKEN")
 		mediumClient = medium.NewClientWithAccessToken(mediumAccessToken)
@@ -180,10 +252,8 @@ func main() {
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
-	http.HandleFunc("/graphql", func(response http.ResponseWriter, request *http.Request) {
-		if !manageCors(&response, request) {
-			return
-		}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/graphql", func(response http.ResponseWriter, request *http.Request) {
 		tokenKey = tokenKeyType("token")
 		result := graphql.Do(graphql.Params{
 			Schema:        schema,
@@ -193,20 +263,52 @@ func main() {
 		response.Header().Set("content-type", "application/json")
 		json.NewEncoder(response).Encode(result)
 	})
-	http.HandleFunc("/countPosts", countPosts)
-	http.HandleFunc("/sendTestEmail", sendTestEmail)
-	http.HandleFunc("/loginEmailPassword", loginEmailPassword)
-	http.HandleFunc("/logoutEmailPassword", logoutEmailPassword)
-	http.HandleFunc("/register", register)
-	http.HandleFunc("/verify", verifyEmail)
-	http.HandleFunc("/sendResetEmail", sendPasswordResetEmail)
-	http.HandleFunc("/reset", resetPassword)
-	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/createPostPicture", createPostPicture)
-	http.HandleFunc("/updatePostPicture", updatePostPicture)
-	http.HandleFunc("/deletePostPictures", deletePostPictures)
-	http.HandleFunc("/getPostPicture", getPostPicture)
-	http.ListenAndServe(port, nil)
+	mux.HandleFunc("/countPosts", countPosts)
+	mux.HandleFunc("/sendTestEmail", sendTestEmail)
+	mux.HandleFunc("/loginEmailPassword", loginEmailPassword)
+	mux.HandleFunc("/logoutEmailPassword", logoutEmailPassword)
+	mux.HandleFunc("/register", register)
+	mux.HandleFunc("/verify", verifyEmail)
+	mux.HandleFunc("/sendResetEmail", sendPasswordResetEmail)
+	mux.HandleFunc("/reset", resetPassword)
+	mux.HandleFunc("/hello", hello)
+	mux.HandleFunc("/getPostPicture", getPostPicture)
+	mux.HandleFunc("/writePostPicture", writePostPicture)
+	mux.HandleFunc("/deletePostPictures", deletePostPictures)
+	mux.HandleFunc("/getPostFile", getPostFile)
+	mux.HandleFunc("/writePostFile", writePostFile)
+	mux.HandleFunc("/deletePostFiles", deletePostFiles)
+	mux.HandleFunc("/shortlink", shortLinkRedirect)
+	mux.HandleFunc("/createShortLink", createShortLink)
+	var allowedOrigins []string
+	if mode == "debug" {
+		allowedOrigins = []string{
+			"*",
+		}
+	} else {
+		allowedOrigins = []string{
+			websiteURL,
+			shortlinkURL,
+		}
+	}
+	thecors := cors.New(cors.Options{
+		AllowedOrigins: allowedOrigins,
+		AllowedHeaders: []string{
+			"Authorization",
+			"Content-Type",
+		},
+		AllowedMethods: []string{
+			"GET",
+			"POST",
+			"PUT",
+			"DELETE",
+			"OPTIONS",
+		},
+		OptionsPassthrough: false,
+		Debug:              mode == "debug",
+	})
+	handler := thecors.Handler(mux)
+	http.ListenAndServe(port, handler)
 	logger.Info("Starting the application at " + port + " 🚀")
 }
 
@@ -217,18 +319,6 @@ func getAuthToken(request *http.Request) string {
 		authToken = splitToken[1]
 	}
 	return authToken
-}
-
-func manageCors(w *http.ResponseWriter, r *http.Request) bool {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "*")
-	if (*r).Method == "OPTIONS" {
-		(*w).Header().Set("Access-Control-Max-Age", "86400")
-		(*w).WriteHeader(http.StatusOK)
-		return false
-	}
-	return true
 }
 
 func validType(thetype string) bool {

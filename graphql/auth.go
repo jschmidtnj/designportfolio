@@ -3,17 +3,28 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-	"time"
 )
+
+/**
+ * authentication for api
+ */
+
+/**
+ * @apiDefine authToken
+ * @apiHeader {String} Authorization "Bearer `token`" - login auth token
+ */
 
 var jwtIssuer = "Annette von Brandis"
 
@@ -26,10 +37,54 @@ type loginClaims struct {
 	jwt.StandardClaims
 }
 
-func register(response http.ResponseWriter, request *http.Request) {
-	if !manageCors(&response, request) {
-		return
+func verifyRecaptcha(recaptchaToken string, recaptchaSecret string) error {
+	request, err := http.NewRequest("POST", "https://www.google.com/recaptcha/api/siteverify", nil)
+	if err != nil {
+		return err
 	}
+	query := request.URL.Query()
+	query.Add("secret", recaptchaSecret)
+	query.Add("response", recaptchaToken)
+	request.URL.RawQuery = query.Encode()
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	var responsedata map[string]interface{}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(body, &responsedata)
+	if err != nil {
+		return err
+	}
+	if !responsedata["success"].(bool) {
+		errorcodes := responsedata["error-codes"].([]interface{})
+		codesStrArr := make([]string, len(errorcodes))
+		for i, code := range errorcodes {
+			codeStr, ok := code.(string)
+			if !ok {
+				return errors.New("cannot cast error code to string in recaptcha result")
+			}
+			codesStrArr[i] = codeStr
+		}
+		return errors.New("invalid recaptcha token: " + strings.Join(codesStrArr, ", "))
+	}
+	return nil
+}
+
+/**
+ * @api {post} /register User registration
+ * @apiVersion 0.0.1
+ * @apiParam {String} email Registration email
+ * @apiParam {String} password User password
+ * @apiSuccess {String} message Response message
+ * @apiGroup authentication
+ */
+func register(response http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		handleError("register http method not POST", http.StatusBadRequest, response)
 		return
@@ -45,8 +100,8 @@ func register(response http.ResponseWriter, request *http.Request) {
 		handleError("error parsing request body: "+err.Error(), http.StatusBadRequest, response)
 		return
 	}
-	if !(registerdata["password"] != nil && registerdata["email"] != nil) {
-		handleError("no email or password provided", http.StatusBadRequest, response)
+	if !(registerdata["password"] != nil && registerdata["email"] != nil && registerdata["recaptcha"] != nil) {
+		handleError("no email or password or recaptcha token provided", http.StatusBadRequest, response)
 		return
 	}
 	password, ok := registerdata["password"].(string)
@@ -57,6 +112,16 @@ func register(response http.ResponseWriter, request *http.Request) {
 	email, ok := registerdata["email"].(string)
 	if !ok {
 		handleError("email cannot be cast to string", http.StatusBadRequest, response)
+		return
+	}
+	recaptchatoken, ok := registerdata["recaptcha"].(string)
+	if !ok {
+		handleError("recaptcha token cannot be cast to string", http.StatusBadRequest, response)
+		return
+	}
+	err = verifyRecaptcha(recaptchatoken, mainRecaptchaSecret)
+	if err != nil {
+		handleError("recaptcha error: "+err.Error(), http.StatusUnauthorized, response)
 		return
 	}
 	countemail, err := userCollection.CountDocuments(ctxMongo, bson.M{"email": email})
@@ -86,6 +151,7 @@ func register(response http.ResponseWriter, request *http.Request) {
 		"password":      string(passwordhashed),
 		"emailverified": false,
 		"type":          "user",
+		"shortlinks":    []string{},
 	})
 	if err != nil {
 		handleError("error inserting user to database: "+err.Error(), http.StatusBadRequest, response)
@@ -100,10 +166,15 @@ func register(response http.ResponseWriter, request *http.Request) {
 	response.Write([]byte(`{"message":"please check email for verification"}`))
 }
 
+/**
+ * @api {put} /loginEmailPassword User login
+ * @apiVersion 0.0.1
+ * @apiParam {String} email User email
+ * @apiParam {String} password User password
+ * @apiSuccess {String} token User token for authenticated requests
+ * @apiGroup authentication
+ */
 func loginEmailPassword(response http.ResponseWriter, request *http.Request) {
-	if !manageCors(&response, request) {
-		return
-	}
 	if request.Method != http.MethodPut {
 		handleError("login http method not PUT", http.StatusBadRequest, response)
 		return
@@ -119,8 +190,8 @@ func loginEmailPassword(response http.ResponseWriter, request *http.Request) {
 		handleError("error parsing request body: "+err.Error(), http.StatusBadRequest, response)
 		return
 	}
-	if logindata["email"] == nil || logindata["password"] == nil {
-		handleError("no email or password provided", http.StatusBadRequest, response)
+	if logindata["email"] == nil || logindata["password"] == nil || logindata["recaptcha"] == nil {
+		handleError("no email or password or recaptcha token provided", http.StatusBadRequest, response)
 		return
 	}
 	email, ok := logindata["email"].(string)
@@ -131,6 +202,16 @@ func loginEmailPassword(response http.ResponseWriter, request *http.Request) {
 	password, ok := logindata["password"].(string)
 	if !ok {
 		handleError("password cannot be cast to string", http.StatusBadRequest, response)
+		return
+	}
+	recaptchatoken, ok := logindata["recaptcha"].(string)
+	if !ok {
+		handleError("recaptcha token cannot be cast to string", http.StatusBadRequest, response)
+		return
+	}
+	err = verifyRecaptcha(recaptchatoken, mainRecaptchaSecret)
+	if err != nil {
+		handleError("recaptcha error: "+err.Error(), http.StatusUnauthorized, response)
 		return
 	}
 	cursor, err := userCollection.Find(ctxMongo, bson.M{"email": email})
@@ -186,10 +267,14 @@ func loginEmailPassword(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
+/**
+ * @api {put} /logoutEmailPassword User logout
+ * @apiVersion 0.0.1
+ * @apiUse authToken
+ * @apiSuccess {String} message Response message
+ * @apiGroup authentication
+ */
 func logoutEmailPassword(response http.ResponseWriter, request *http.Request) {
-	if !manageCors(&response, request) {
-		return
-	}
 	if request.Method != http.MethodPut {
 		handleError("logout http method not PUT", http.StatusBadRequest, response)
 		return
@@ -204,9 +289,6 @@ func logoutEmailPassword(response http.ResponseWriter, request *http.Request) {
 }
 
 func verifyEmail(response http.ResponseWriter, request *http.Request) {
-	if !manageCors(&response, request) {
-		return
-	}
 	if request.Method != http.MethodPost {
 		handleError("verify http method not POST", http.StatusBadRequest, response)
 		return
@@ -281,22 +363,25 @@ func verifyEmail(response http.ResponseWriter, request *http.Request) {
 			return
 		}
 		userData := userDataPrimitive.Map()
-		if userData["emailverified"] != nil && !userData["emailverified"].(bool) {
+		if userData["emailverified"] != nil && userData["emailverified"].(bool) {
 			handleError("email already verified", http.StatusBadRequest, response)
 			return
 		}
-		var id string = userData["_id"].(string)
+		id := userData["_id"].(primitive.ObjectID)
 		_, err := userCollection.UpdateOne(ctxMongo, bson.M{
 			"_id": id,
 		}, bson.M{
-			"emailverified": true,
+			"$set": bson.M{
+				"emailverified": true,
+			},
 		})
 		if err != nil {
 			handleError("error updating user in database: "+err.Error(), http.StatusBadRequest, response)
 			return
 		}
+		idstring := id.Hex()
 		logger.Info("User email verify",
-			zap.String("id", id),
+			zap.String("id", idstring),
 			zap.String("email", userData["email"].(string)),
 		)
 		response.Header().Set("content-type", "application/json")
@@ -309,10 +394,15 @@ func verifyEmail(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
+/**
+ * @api {put} /resetPassword Reset password
+ * @apiVersion 0.0.1
+ * @apiParam {String} token Password reset token
+ * @apiParam {String} password New password
+ * @apiSuccess {String} message Response message
+ * @apiGroup authentication
+ */
 func resetPassword(response http.ResponseWriter, request *http.Request) {
-	if !manageCors(&response, request) {
-		return
-	}
 	if request.Method != http.MethodPost {
 		handleError("reset http method not POST", http.StatusBadRequest, response)
 		return
@@ -396,7 +486,7 @@ func resetPassword(response http.ResponseWriter, request *http.Request) {
 			handleError("user id invalid or email not verified", http.StatusBadRequest, response)
 			return
 		}
-		var id string = userData["_id"].(string)
+		id := userData["_id"].(primitive.ObjectID)
 		passwordhashed, err := bcrypt.GenerateFromPassword([]byte(password), numHashes)
 		if err != nil {
 			handleError("error hashing password: "+err.Error(), http.StatusBadRequest, response)
@@ -405,14 +495,17 @@ func resetPassword(response http.ResponseWriter, request *http.Request) {
 		_, err = userCollection.UpdateOne(ctxMongo, bson.M{
 			"_id": id,
 		}, bson.M{
-			"password": passwordhashed,
+			"$set": bson.M{
+				"password": string(passwordhashed),
+			},
 		})
 		if err != nil {
 			handleError("error updating user in database: "+err.Error(), http.StatusBadRequest, response)
 			return
 		}
+		idStr := id.Hex()
 		logger.Info("User password reset",
-			zap.String("id", id),
+			zap.String("id", idStr),
 			zap.String("email", userData["email"].(string)),
 		)
 		response.Header().Set("content-type", "application/json")

@@ -1,14 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # abort on errors
 set -e
-
-# build
-npm run build
-
-rm -rf .vuepress/dist/
-
-mv designportfolio/ .vuepress/dist
 
 # navigate into the build output directory
 cd .vuepress/dist
