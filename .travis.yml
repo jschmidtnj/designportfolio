@@ -30,4 +30,4 @@ matrix:
     - tar xvf secrets.tar
     script:
     - gcloud auth activate-service-account --key-file serviceaccount.json
-    - gcloud --quiet --project designportfolio app deploy app.yaml
+    - gcloud --quiet --project annette-design-portfolio app deploy app.yaml
