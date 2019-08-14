@@ -1,12 +1,6 @@
 <template>
   <section class="container">
     <div>
-      <b-jumbotron header="Annette von Brandis" lead="Designer" class="mt-4">
-        <b-button variant="primary" href="/about">About</b-button>
-      </b-jumbotron>
-      <h3>Blogs</h3>
-      <tile-rows type="blog" />
-      <h3>Projects</h3>
       <tile-rows type="project" />
     </div>
   </section>

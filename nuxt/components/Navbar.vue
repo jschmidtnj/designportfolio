@@ -1,29 +1,26 @@
 <template>
-  <b-navbar toggleable="lg" type="dark" variant="info">
-    <b-navbar-brand href="/">AvB</b-navbar-brand>
-    <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
-    <b-collapse id="nav-collapse" is-nav>
-      <b-navbar-nav>
-        <b-nav-item href="/about">About</b-nav-item>
-        <b-nav-item href="/blogs">Blogs</b-nav-item>
-        <b-nav-item href="/projects">Projects</b-nav-item>
-        <b-nav-item href="/downloads">Downloads</b-nav-item>
-        <b-nav-item v-if="!loggedin" href="/signup">Signup</b-nav-item>
-        <b-nav-item v-if="!loggedin" href="/login">Login</b-nav-item>
-      </b-navbar-nav>
-      <b-navbar-nav v-if="loggedin" class="ml-auto">
-        <b-nav-item-dropdown right>
-          <template slot="button-content">
-            <em>User</em>
-          </template>
-          <b-dropdown-item href="/account">Profile</b-dropdown-item>
-          <b-dropdown-item href="#" @click="logout">
-            Sign Out
-          </b-dropdown-item>
-        </b-nav-item-dropdown>
-      </b-navbar-nav>
-    </b-collapse>
-  </b-navbar>
+  <b-container class="p-0">
+    <b-navbar toggleable="lg" type="light" variant="light">
+      <b-navbar-brand id="navbar-brand" href="/"
+        >Annette von Brandis</b-navbar-brand
+      >
+      <b-navbar-toggle target="navbarContent"></b-navbar-toggle>
+      <b-collapse id="navbarContent" is-nav>
+        <b-navbar-nav class="ml-auto">
+          <b-nav-item href="/about">About</b-nav-item>
+          <b-nav-item-dropdown v-if="loggedin" right>
+            <template slot="button-content">
+              <em>User</em>
+            </template>
+            <b-dropdown-item href="/account">Profile</b-dropdown-item>
+            <b-dropdown-item href="#" @click="logout">
+              Sign Out
+            </b-dropdown-item>
+          </b-nav-item-dropdown>
+        </b-navbar-nav>
+      </b-collapse>
+    </b-navbar>
+  </b-container>
 </template>
 
 <script lang="ts">
