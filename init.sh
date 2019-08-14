@@ -12,4 +12,6 @@ cd ../amp
 yarn install 
 cd ../init
 yarn install
+cd ../shortlink
+yarn install
 cd ..
