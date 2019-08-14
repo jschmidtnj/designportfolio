@@ -41,10 +41,10 @@
         <hr />
         <vue-markdown
           :source="post.content"
-          class="mb-4 markdown"
+          class="markdown"
           @rendered="updateMarkdown"
         />
-        <tile-carousel :type="type" />
+        <tile-carousel class="carousel" :type="type" />
       </b-container>
     </div>
     <loading v-else />
@@ -238,6 +238,10 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
+.carousel {
+  margin-bottom: 5rem;
+  margin-top: 10rem;
+}
 @media (min-width: 1200px) {
   .container{
     max-width: 1400px;

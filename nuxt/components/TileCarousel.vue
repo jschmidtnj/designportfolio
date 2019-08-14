@@ -1,7 +1,7 @@
 <template>
-  <div id="tiles" class="mb-5">
+  <div id="tiles">
     <div v-if="!loading" id="tile-data">
-      <div v-if="count > perpage" id="navigation-buttons">
+      <div v-if="count > perpage" id="navigation-buttons" class="mb-3">
         <button
           class="button-link"
           :disabled="count <= perpage"
@@ -14,9 +14,8 @@
         >
           <no-ssr>
             <font-awesome-icon
-              class="mr-2"
-              style="max-width: 13px;"
-              icon="arrow-left"
+              class="mr-2 arrow-size-carousel"
+              icon="chevron-left"
             />
           </no-ssr>
         </button>
@@ -32,29 +31,8 @@
         >
           <no-ssr>
             <font-awesome-icon
-              class="mr-2"
-              style="max-width: 13px;"
-              icon="arrow-right"
-            />
-          </no-ssr>
-        </button>
-      </div>
-      <div v-if="window.width < count * 200" id="scroll-buttons">
-        <button class="button-link" @click="swipeLeft">
-          <no-ssr>
-            <font-awesome-icon
-              class="mr-2"
-              style="max-width: 13px;"
-              icon="arrow-left"
-            />
-          </no-ssr>
-        </button>
-        <button class="button-link" @click="swipeRight">
-          <no-ssr>
-            <font-awesome-icon
-              class="mr-2"
-              style="max-width: 13px;"
-              icon="arrow-right"
+              class="mr-2 arrow-size-carousel"
+              icon="chevron-right"
             />
           </no-ssr>
         </button>
@@ -76,7 +54,7 @@
               }
             "
           >
-            <b-card class="tile" no-body>
+            <b-card class="tile ml-2 mr-2" no-body>
               <b-card-body class="tile zoom p-0">
                 <b-card-img-lazy
                   :src="
@@ -105,6 +83,24 @@
           </button>
         </no-ssr>
       </b-card-group>
+      <div v-if="window.width < count * 200" id="scroll-buttons" class="mt-3">
+        <button class="button-link" @click="swipeLeft">
+          <no-ssr>
+            <font-awesome-icon
+              class="mr-2 arrow-size-carousel"
+              icon="chevron-left"
+            />
+          </no-ssr>
+        </button>
+        <button class="button-link" @click="swipeRight">
+          <no-ssr>
+            <font-awesome-icon
+              class="mr-2 arrow-size-carousel"
+              icon="chevron-right"
+            />
+          </no-ssr>
+        </button>
+      </div>
     </div>
     <loading v-else />
     <!-- need arrow right and left from fontawesome, and start in the middle
@@ -230,11 +226,11 @@ export default Vue.extend({
     },
     swipeLeft() {
       const content = this.$refs.carouselContent;
-      this.scrollTo(content, -300, 800);
+      this.scrollTo(content, -300, 500);
     },
     swipeRight() {
       const content = this.$refs.carouselContent;
-      this.scrollTo(content, 300, 800);
+      this.scrollTo(content, 300, 500);
     },
     navigate(id) {
       // @ts-ignore
@@ -323,6 +319,9 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
+.arrow-size-carousel {
+  font-size: 1.5rem;
+}
 .tile-img {
   object-fit: cover;
   width: 200px;

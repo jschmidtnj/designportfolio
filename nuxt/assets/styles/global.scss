@@ -3,6 +3,17 @@
 @import '~/node_modules/vue-select/src/scss/vue-select.scss';
 @import '~/node_modules/epic-spinners/dist/lib/epic-spinners.min.css';
 
+/* variables */
+:root {
+  --font-family-main: 'Lato', sans-serif;
+}
+
+/* set fonts */
+* {
+  font-family: var(--font-family-main);
+  font-display: auto;
+}
+
 /* get footer to stick to the bottom */
 .main-wrapper {
   display: flex;
@@ -16,8 +27,8 @@
 /* get bullet points back */
 .markdown ul {
   list-style-type: disc !important;
-  padding-left:1em !important;
-  margin-left:1em;
+  padding-left: 1em !important;
+  margin-left: 1em;
 }
 
 /* button without styling */
