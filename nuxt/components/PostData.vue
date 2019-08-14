@@ -1,50 +1,54 @@
 <template>
   <div>
     <div v-if="post" id="post-data">
-      <b-container class="hero-body">
-        <b-row>
-          <b-col>
-            <b-img-lazy
-              v-if="post.heroimage"
-              :loading="
-                `${postCdn}/${
-                  type === 'blog' ? 'blogimages' : 'projectimages'
-                }/${post.heroimage}/blur`
-              "
-              :src="
-                `${postCdn}/${
-                  type === 'blog' ? 'blogimages' : 'projectimages'
-                }/${post.heroimage}/original`
-              "
-              alt="Hero"
-              class="hero-img m-0"
-            ></b-img-lazy>
-            <div class="main-overlay">
-              <div class="text-overlay">
-                <!-- add text overlay here -->
+      <div id="post-content">
+        <b-container class="hero-body">
+          <b-row>
+            <b-col>
+              <b-img-lazy
+                v-if="post.heroimage"
+                :loading="
+                  `${postCdn}/${
+                    type === 'blog' ? 'blogimages' : 'projectimages'
+                  }/${post.heroimage}/blur`
+                "
+                :src="
+                  `${postCdn}/${
+                    type === 'blog' ? 'blogimages' : 'projectimages'
+                  }/${post.heroimage}/original`
+                "
+                alt="Hero"
+                class="hero-img m-0"
+              ></b-img-lazy>
+              <div class="main-overlay">
+                <div class="text-overlay">
+                  <!-- add text overlay here -->
+                </div>
               </div>
-            </div>
-          </b-col>
-        </b-row>
-      </b-container>
-      <b-container v-if="post">
-        <hr />
-        <h1>{{ post.title }}</h1>
-        <p>{{ post.author }}</p>
-        <p v-if="post.id">
-          {{ formatDate(mongoidToDate(post.id), 'M/D/YYYY') }}
-        </p>
-        <p>{{ post.views }}</p>
-        <a :href="`${shortlinkurl}/${post.shortlink}`">{{
-          `${shortlinkurl}/${post.shortlink}`
-        }}</a>
-        <hr />
-        <vue-markdown
-          :source="post.content"
-          class="markdown"
-          @rendered="updateMarkdown"
-        />
-        <tile-carousel class="carousel" :type="type" />
+            </b-col>
+          </b-row>
+        </b-container>
+        <b-container v-if="post">
+          <hr />
+          <h1>{{ post.title }}</h1>
+          <p>{{ post.author }}</p>
+          <p v-if="post.id">
+            {{ formatDate(mongoidToDate(post.id), 'M/D/YYYY') }}
+          </p>
+          <p>{{ post.views }}</p>
+          <a :href="`${shortlinkurl}/${post.shortlink}`">{{
+            `${shortlinkurl}/${post.shortlink}`
+          }}</a>
+          <hr />
+          <vue-markdown
+            :source="post.content"
+            class="markdown"
+            @rendered="updateMarkdown"
+          />
+        </b-container>
+      </div>
+      <b-container>
+        <tile-carousel class="mt-5 mb-2" :type="type" />
       </b-container>
     </div>
     <loading v-else />
@@ -238,9 +242,13 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
-.carousel {
-  margin-bottom: 5rem;
-  margin-top: 10rem;
+#post-data {
+  display: flex;
+  min-height: 90vh;
+  flex-direction: column;
+}
+#post-content {
+  flex: 1;
 }
 @media (min-width: 1200px) {
   .container{

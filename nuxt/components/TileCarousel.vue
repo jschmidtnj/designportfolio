@@ -54,7 +54,7 @@
               }
             "
           >
-            <b-card class="tile ml-2 mr-2" no-body>
+            <b-card class="tile m-2" no-body>
               <b-card-body class="tile zoom p-0">
                 <b-card-img-lazy
                   :src="
@@ -336,6 +336,7 @@ export default Vue.extend({
 }
 .scrolling-wrapper {
   overflow-x: scroll;
+  overflow-y: visible;
   white-space: nowrap;
   width: 100%;
   -webkit-overflow-scrolling: touch;
