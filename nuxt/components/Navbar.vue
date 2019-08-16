@@ -1,6 +1,6 @@
 <template>
-  <b-container class="p-0">
-    <b-navbar toggleable="lg" type="light" variant="light">
+  <b-navbar toggleable="lg" type="light" variant="light">
+    <b-container class="p-0">
       <b-navbar-brand id="navbar-brand" href="/"
         >Annette von Brandis</b-navbar-brand
       >
@@ -19,8 +19,8 @@
           </b-nav-item-dropdown>
         </b-navbar-nav>
       </b-collapse>
-    </b-navbar>
-  </b-container>
+    </b-container>
+  </b-navbar>
 </template>
 
 <script lang="ts">
