@@ -1,0 +1,7 @@
+# redirects for netlify
+/sitemap.xml             https://api.annettevonbrandis.com/sitemap.xml
+/sitemap.xml.gz          https://api.annettevonbrandis.com/sitemap.xml.gz
+/sitemap-blogs.xml       https://api.annettevonbrandis.com/sitemap-blogs.xml
+/sitemap-blogs.xml.gz    https://api.annettevonbrandis.com/sitemap-blogs.xml.gz
+/sitemap-projects.xml    https://api.annettevonbrandis.com/sitemap-projects.xml
+/sitemap-projects.xml.gz https://api.annettevonbrandis.com/sitemap-projects.xml.gz
