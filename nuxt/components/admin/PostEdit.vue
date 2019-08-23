@@ -855,12 +855,20 @@ export default Vue.extend({
       console.log('done')
     },
     removeFile() {
-      const removedFile = this.post.files.pop()
-      if (removedFile.file && removedFile.name && removedFile.id && this.mode === this.modetypes.edit && removedFile.uploaded) {
+      const removedFile = this.post.files[this.post.files.length - 1]
+      const finished = () => {
+        this.post.files.pop()
+        this.$toasted.global.success({
+          message: `removed file ${removedFile.id}`
+        })
+      }
+      if (this.mode === this.modetypes.add || !removedFile.uploaded) {
+        finished()
+      } else if (removedFile.name && removedFile.id && this.mode === this.modetypes.edit) {
         this.$axios
           .delete('/deletePostFiles', {
             data: {
-              imageids: [
+              fileids: [
                 `${encodeURIComponent(removedFile.name)}.${removedFile.id}`
               ],
               postid: this.postid,
@@ -869,9 +877,7 @@ export default Vue.extend({
           })
           .then(res => {
             if (res.status == 200) {
-              this.$toasted.global.success({
-                message: `removed file ${removedFile.id}`
-              })
+              finished()
             } else {
               this.$toasted.global.error({
                 message: `got status code of ${res.status} on file delete`
@@ -887,12 +893,23 @@ export default Vue.extend({
               message: message
             })
           })
+      } else {
+        this.$toasted.global.error({
+          message: 'no name or id found, or mode type not edit'
+        })
       }
     },
     removeImage() {
-      const removedImage = this.post.images.pop()
-      if (removedImage.file && removedImage.name && removedImage.id && this.mode === this.modetypes.edit && removedImage.uploaded) {
-        console.log(`${encodeURIComponent(removedImage.name)}.${removedImage.id}`)
+      const removedImage = this.post.files[this.post.images.length - 1]
+      const finished = () => {
+        this.post.images.pop()
+        this.$toasted.global.success({
+          message: `removed image ${removedImage.id}`
+        })
+      }
+      if (this.mode === this.modetypes.add || !removedImage.uploaded) {
+        finished()
+      } else if (removedImage.name && removedImage.id && this.mode === this.modetypes.edit) {
         this.$axios
           .delete('/deletePostPictures', {
             data: {
@@ -905,9 +922,7 @@ export default Vue.extend({
           })
           .then(res => {
             if (res.status == 200) {
-              this.$toasted.global.success({
-                message: `removed image ${removedImage.id}`
-              })
+              finished()
             } else {
               this.$toasted.global.error({
                 message: `got status code of ${res.status} on image delete`
@@ -923,6 +938,10 @@ export default Vue.extend({
               message: message
             })
           })
+      } else {
+        this.$toasted.global.error({
+          message: 'no name or id found, or mode type not edit'
+        })
       }
     },
     editPost(searchresult) {
