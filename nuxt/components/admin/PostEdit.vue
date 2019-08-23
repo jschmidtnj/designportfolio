@@ -900,7 +900,7 @@ export default Vue.extend({
       }
     },
     removeImage() {
-      const removedImage = this.post.files[this.post.images.length - 1]
+      const removedImage = this.post.images[this.post.images.length - 1]
       const finished = () => {
         this.post.images.pop()
         this.$toasted.global.success({
