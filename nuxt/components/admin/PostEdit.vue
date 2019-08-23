@@ -345,7 +345,7 @@
                           variant="primary"
                           class="mr-2"
                           :disabled="post.images.length === 0"
-                          @click="post.images.pop()"
+                          @click="removeImage"
                         >
                           <no-ssr>
                             <font-awesome-icon
@@ -443,7 +443,7 @@
                           variant="primary"
                           class="mr-2"
                           :disabled="post.files.length === 0"
-                          @click="post.files.pop()"
+                          @click="removeFile"
                         >
                           <no-ssr>
                             <font-awesome-icon
@@ -607,6 +607,7 @@ import uuid from 'uuid/v1'
 import axios from 'axios'
 import { Chrome } from 'vue-color'
 import LazyLoad from 'vanilla-lazyload'
+import { ObjectID } from 'bson'
 import {
   cloudStorageURLs,
   validTypes,
@@ -659,7 +660,7 @@ export default Vue.extend({
     return {
       modetypes: modetypes,
       mode: modetypes.add,
-      postid: null,
+      postid: new ObjectID().toString(),
       search: '',
       searchresults: [],
       currentpage: 1,
@@ -692,7 +693,7 @@ export default Vue.extend({
         title: '',
         content: '',
         caption: '',
-        color: Object.assign('', defaultColor),
+        color: defaultColor,
         author: '',
         tags: [],
         categories: [],
@@ -821,9 +822,9 @@ export default Vue.extend({
     getImageTag(image) {
       return `<img data-src="${cloudStorageURLs.posts}/${
         this.type === 'blog' ? 'blogimages' : 'projectimages'
-      }/${encodeURI(image.name)}.${image.id}/original" src="${
+      }/${this.postid}/${encodeURIComponent(image.name)}.${image.id}/original" src="${
         cloudStorageURLs.posts
-      }/${this.type === 'blog' ? 'blogimages' : 'projectimages'}/${
+      }/${this.type === 'blog' ? 'blogimages' : 'projectimages'}/${this.postid}/${
         image.name
       }.${image.id}/blur" class="lazy img-fluid" alt="${
         image.name
@@ -832,7 +833,7 @@ export default Vue.extend({
     getFileTag(file) {
       return `<a href="${cloudStorageURLs.posts}/${
         this.type === 'blog' ? 'blogfiles' : 'projectfiles'
-      }/${encodeURI(file.name)}.${file.id}"></a>`
+      }/${this.postid}/${encodeURIComponent(file.name)}.${file.id}"></a>`
     },
     updateImageSrc(image) {
       console.log('start image src')
@@ -852,6 +853,77 @@ export default Vue.extend({
       }
       reader.readAsDataURL(image.file)
       console.log('done')
+    },
+    removeFile() {
+      const removedFile = this.post.files.pop()
+      if (removedFile.file && removedFile.name && removedFile.id && this.mode === this.modetypes.edit && removedFile.uploaded) {
+        this.$axios
+          .delete('/deletePostFiles', {
+            data: {
+              imageids: [
+                `${encodeURIComponent(removedFile.name)}.${removedFile.id}`
+              ],
+              postid: this.postid,
+              type: this.type
+            }
+          })
+          .then(res => {
+            if (res.status == 200) {
+              this.$toasted.global.success({
+                message: `removed file ${removedFile.id}`
+              })
+            } else {
+              this.$toasted.global.error({
+                message: `got status code of ${res.status} on file delete`
+              })
+            }
+          })
+          .catch(err => {
+            let message = `got error on file delete: ${err}`
+            if (err.response && err.response.data) {
+              message = err.response.data.message
+            }
+            this.$toasted.global.error({
+              message: message
+            })
+          })
+      }
+    },
+    removeImage() {
+      const removedImage = this.post.images.pop()
+      if (removedImage.file && removedImage.name && removedImage.id && this.mode === this.modetypes.edit && removedImage.uploaded) {
+        console.log(`${encodeURIComponent(removedImage.name)}.${removedImage.id}`)
+        this.$axios
+          .delete('/deletePostPictures', {
+            data: {
+              imageids: [
+                `${encodeURIComponent(removedImage.name)}.${removedImage.id}`
+              ],
+              postid: this.postid,
+              type: this.type
+            }
+          })
+          .then(res => {
+            if (res.status == 200) {
+              this.$toasted.global.success({
+                message: `removed image ${removedImage.id}`
+              })
+            } else {
+              this.$toasted.global.error({
+                message: `got status code of ${res.status} on image delete`
+              })
+            }
+          })
+          .catch(err => {
+            let message = `got error on image delete: ${err}`
+            if (err.response && err.response.data) {
+              message = err.response.data.message
+            }
+            this.$toasted.global.error({
+              message: message
+            })
+          })
+      }
     },
     editPost(searchresult) {
       this.postid = searchresult.id
@@ -880,7 +952,7 @@ export default Vue.extend({
             .get(
               `${cloudStorageURLs.posts}/${
                 this.type === 'blog' ? 'blogimages' : 'projectimages'
-              }/${thepost.heroimage}/original`,
+              }/${this.postid}/${thepost.heroimage}/original`,
               {
                 responseType: 'blob'
               }
@@ -948,7 +1020,7 @@ export default Vue.extend({
             .get(
               `${cloudStorageURLs.posts}/${
                 this.type === 'blog' ? 'blogimages' : 'projectimages'
-              }/${thepost.tileimage}/original`,
+              }/${this.postid}/${thepost.tileimage}/original`,
               {
                 responseType: 'blob'
               }
@@ -1018,7 +1090,7 @@ export default Vue.extend({
               .get(
                 `${cloudStorageURLs.posts}/${
                   this.type === 'blog' ? 'blogimages' : 'projectimages'
-                }/${thepost.images[i]}/original`,
+                }/${this.postid}/${thepost.images[i]}/original`,
                 {
                   responseType: 'blob'
                 }
@@ -1087,7 +1159,7 @@ export default Vue.extend({
               .get(
                 `${cloudStorageURLs.posts}/${
                   this.type === 'blog' ? 'blogfiles' : 'projectfiles'
-                }/${thepost.files[i]}`,
+                }/${this.postid}/${thepost.files[i]}`,
                 {
                   responseType: 'blob'
                 }
@@ -1308,7 +1380,7 @@ export default Vue.extend({
         title: '',
         content: '',
         caption: '',
-        color: Object.assign('', defaultColor),
+        color: defaultColor,
         author: '',
         heroimage: Object.assign({}, originalHero),
         tileimage: Object.assign({}, originalTile),
@@ -1320,7 +1392,7 @@ export default Vue.extend({
       this.post.heroimage.id = this.createId()
       this.post.tileimage.id = this.createId()
       this.mode = this.modetypes.add
-      this.postid = null
+      this.postid = new ObjectID().toString()
     },
     manageposts(evt) {
       evt.preventDefault()
@@ -1352,7 +1424,8 @@ export default Vue.extend({
             .put('/writePostPicture', formData, {
               params: {
                 type: this.type,
-                imageid: imageid
+                imageid: imageid,
+                postid: this.postid
               },
               headers: {
                 'Content-Type': 'multipart/form-data'
@@ -1457,7 +1530,7 @@ export default Vue.extend({
             )
             uploadImage(
               imageuploads[i].file,
-              `${encodeURI(imageuploads[i].name)}.${imageuploads[i].id}`
+              `${encodeURIComponent(imageuploads[i].name)}.${imageuploads[i].id}`
             )
           }
         }
@@ -1472,7 +1545,7 @@ export default Vue.extend({
             )
             uploadFile(
               fileuploads[i].file,
-              `${encodeURI(fileuploads[i].name)}.${fileuploads[i].id}`
+              `${encodeURIComponent(fileuploads[i].name)}.${fileuploads[i].id}`
             )
           }
         }
@@ -1496,6 +1569,8 @@ export default Vue.extend({
           .post('/graphql', {
             query: `mutation{addPost(type:"${encodeURIComponent(
               this.type
+            )}",id:"${encodeURIComponent(
+              this.postid
             )}",title:"${encodeURIComponent(
               this.post.title
             )}",content:"${encodeURIComponent(
