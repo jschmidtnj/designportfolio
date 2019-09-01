@@ -253,10 +253,32 @@ export default Vue.extend({
 #content-container {
   padding-left: 0;
   padding-right: 0;
+  p, h1, h2, h3, h4, h5, h6 {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+  @media (min-width: 1200px) {
+    p, h1, h2, h3, h4, h5, h6 {
+      padding-right: 20rem;
+      padding-left: 12rem;
+    }
+  }
 }
-#content-container p, h1, h2, h3, h4, h5, h6 {
-  padding-right: 15px;
-  padding-left: 15px;
+#header-container {
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 3rem;
+  padding-bottom: 1rem;
+  p, h1, h2, h3, h4, h5, h6 {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+  @media (min-width: 1200px) {
+    p, h1, h2, h3, h4, h5, h6 {
+      padding-right: 20rem;
+      padding-left: 12rem;
+    }
+  }
 }
 #post-data {
   display: flex;

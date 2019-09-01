@@ -18,7 +18,7 @@ export default Vue.extend({
   head() {
     const title = 'Account'
     const description = `your account: ${this.$store.state.auth.user.email}`
-    const image = `${seo.url}/icon.png`
+    const image = `${seo.url}/icon.jpg`
     return {
       title: title,
       meta: [

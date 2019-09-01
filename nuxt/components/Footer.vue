@@ -54,6 +54,7 @@ export default Vue.extend({
   footer p {
     font-size: 12px;
     margin: 0;
+    color: #6e6e6e;
   }
 
   footer ul {

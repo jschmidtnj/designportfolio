@@ -180,7 +180,7 @@ export default Vue.extend({
   head() {
     const title = `Search ${this.type}`
     const description = `search for ${this.type}s, by name, views, etc`
-    const image = `${seo.url}/icon.png`
+    const image = `${seo.url}/icon.jpg`
     return {
       title: title,
       meta: [

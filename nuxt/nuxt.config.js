@@ -49,7 +49,7 @@ module.exports = {
           '@type': 'Organization',
           name: pkg.author,
           url: seodata.url,
-          logo: `${seodata.url}/icon.png`,
+          logo: `${seodata.url}/icon.jpg`,
           contactPoint: {
             '@type': 'ContactPoint',
             email: seodata.email,

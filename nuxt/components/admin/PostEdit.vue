@@ -601,6 +601,7 @@ const originalHero = {
   height: null
 }
 const originalTile = Object.assign({}, originalHero)
+originalTile.id = uuid()
 originalTile.name = 'tile'
 export default Vue.extend({
   name: 'Posts',
@@ -732,7 +733,7 @@ export default Vue.extend({
   head() {
     const title = `Admin Edit ${this.type}`
     const description = `admin page for editing ${this.type}s`
-    const image = `${seo.url}/icon.png`
+    const image = `${seo.url}/icon.jpg`
     return {
       title: title,
       meta: [

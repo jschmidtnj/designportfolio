@@ -128,7 +128,7 @@ export default Vue.extend({
   head() {
     const title = 'Reset'
     const description = 'reset your account password'
-    const image = `${seo.url}/icon.png`
+    const image = `${seo.url}/icon.jpg`
     return {
       title: title,
       meta: [

@@ -23,7 +23,7 @@ export default Vue.extend({
     const title = 'Home'
     const description =
       'custom blog and project descriptions for anything in tech and beyond'
-    const image = `${seo.url}/icon.png`
+    const image = `${seo.url}/icon.jpg`
     return {
       title: title,
       meta: [

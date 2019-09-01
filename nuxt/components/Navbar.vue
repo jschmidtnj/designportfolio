@@ -1,9 +1,13 @@
 <template>
   <b-navbar toggleable="lg" type="light" variant="light">
     <b-container class="p-0">
-      <b-navbar-brand id="navbar-brand" href="/"
-        >Annette von Brandis</b-navbar-brand
-      >
+      <b-navbar-brand id="navbar-brand" href="/">
+        <b-img
+          alt="Annette von Brandis"
+          :src="require('~/static/logo.svg')"
+          style="width:3rem;"
+        />
+      </b-navbar-brand>
       <b-navbar-toggle target="navbarContent"></b-navbar-toggle>
       <b-collapse id="navbarContent" is-nav>
         <b-navbar-nav class="ml-auto">

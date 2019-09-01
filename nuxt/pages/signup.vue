@@ -105,7 +105,7 @@ export default Vue.extend({
   head() {
     const title = 'Sign Up'
     const description = 'sign up for an account'
-    const image = `${seo.url}/icon.png`
+    const image = `${seo.url}/icon.jpg`
     return {
       title: title,
       meta: [

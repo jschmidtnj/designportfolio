@@ -16,7 +16,7 @@ export default Vue.extend({
   head() {
     const title = 'Admin Home'
     const description = 'main admin dashboard'
-    const image = `${seo.url}/icon.png`
+    const image = `${seo.url}/icon.jpg`
     return {
       title: title,
       meta: [

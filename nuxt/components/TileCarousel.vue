@@ -75,8 +75,8 @@
                   class="tile-img"
                 />
                 <b-container>
-                  <b-card-title title-tag="h6" class="pt-2">
-                    {{ postval.caption }}
+                  <b-card-title title-tag="h6" class="pt-2 card-title-size">
+                    {{ postval.caption.toUpperCase() }}
                   </b-card-title>
                 </b-container>
               </b-card-body>
@@ -328,6 +328,10 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
+.card-title-size {
+  font-size: 12px;
+  color: #3b3b3b;
+}
 .arrow-size-carousel {
   font-size: 1.5rem;
 }

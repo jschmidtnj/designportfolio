@@ -9,7 +9,12 @@
           class="p-0"
         >
           <a v-if="postval" :href="`/${type}/${postval.id}`">
-            <b-card class="tile rounded-0" text-variant="white" no-body>
+            <b-card
+              class="tile rounded-0"
+              text-variant="white"
+              header-text-variant="white"
+              no-body
+            >
               <b-card-body
                 class="tile-body zoom"
                 @mouseenter="
@@ -45,10 +50,9 @@
                   class="main-overlay"
                 >
                   <div class="text-overlay">
-                    <b-card-title>{{ postval.title }}</b-card-title>
-                    <b-card-sub-title sub-title-text-variant="white">{{
+                    <b-card-title style="color:white;margin-top:15%;">{{
                       postval.caption
-                    }}</b-card-sub-title>
+                    }}</b-card-title>
                   </div>
                 </b-container>
               </b-card-body>
@@ -98,7 +102,17 @@ export default Vue.extend({
       loading: true,
       selected: [],
       staticstorageindexes: staticstorageindexes,
-      paths: paths
+      paths: paths,
+      order: [
+        '5d6adeb06c18198abb484fbc',
+        '5d6aebb27f32100509fce75b',
+        '5d6c39a0e40a4094d512e8c0',
+        '5d6b36b95855014bb7fbc6b9',
+        '5d6ad4373f281b6288bc3fdd',
+        '5d6bfb5366d87783d4384d2a',
+        '5d6c13023f74e8a482b437f2',
+        null
+      ]
     }
   },
   async mounted() {
@@ -167,7 +181,31 @@ export default Vue.extend({
       for (let i = newShownPosts[currentIndex].length; i < numPerRow; i++) {
         newShownPosts[currentIndex].push(null)
       }
-      this.shownPosts = newShownPosts
+      let newShownPostsSorted: any = []
+      newShownPostsSorted.push([])
+      currentIndex = 0
+      this.order.forEach(id => {
+        if (id) {
+          newShownPosts.forEach(postarray => {
+            postarray.forEach(post => {
+              if (post) {
+                if (post.id === id) {
+                  if (newShownPostsSorted[currentIndex].length === numPerRow) {
+                    newShownPostsSorted.push([post])
+                    currentIndex++
+                  } else {
+                    newShownPostsSorted[currentIndex].push(post)
+                  }
+                  return
+                }
+              }
+            })
+          })
+        } else {
+          newShownPostsSorted[currentIndex].push(null)
+        }
+      })
+      this.shownPosts = newShownPostsSorted
       this.loading = false
     },
     updateCount() {
