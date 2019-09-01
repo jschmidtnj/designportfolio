@@ -292,7 +292,7 @@ func rootQuery() *graphql.Object {
 						}
 					}
 					var postElasticIndex string
-					if thetype == "blog" {
+					if thetype == blogType {
 						postElasticIndex = blogElasticIndex
 					} else {
 						postElasticIndex = projectElasticIndex
@@ -390,7 +390,7 @@ func rootQuery() *graphql.Object {
 					var mongoCollection *mongo.Collection
 					var postElasticIndex string
 					var postElasticType string
-					if thetype == "blog" {
+					if thetype == blogType {
 						mongoCollection = blogCollection
 						postElasticIndex = blogElasticIndex
 						postElasticType = blogElasticType
@@ -476,6 +476,32 @@ func rootQuery() *graphql.Object {
 						postData = postPrimitive.Map()
 						postData["date"] = objectidtimestamp(id).Format(dateFormat)
 						postData["id"] = idstring
+						if postData["tileimage"] != nil {
+							primitiveTileImage, ok := postData["tileimage"].(primitive.D)
+							if !ok {
+								return nil, errors.New("cannot cast tile image to primitive D")
+							}
+							postData["tileimage"] = primitiveTileImage.Map()
+						}
+						if postData["heroimage"] != nil {
+							primitiveHeroImage, ok := postData["heroimage"].(primitive.D)
+							if !ok {
+								return nil, errors.New("cannot cast hero image to primitive D")
+							}
+							postData["heroimage"] = primitiveHeroImage.Map()
+						}
+						fileArray, ok := postData["files"].(primitive.A)
+						if !ok {
+							return nil, errors.New("cannot cast files to array")
+						}
+						for i, file := range fileArray {
+							primativeFile, ok := file.(primitive.D)
+							if !ok {
+								return nil, errors.New("cannot cast file to primitive D")
+							}
+							fileArray[i] = primativeFile.Map()
+						}
+						postData["files"] = fileArray
 						delete(postData, "_id")
 						foundstuff = true
 						break

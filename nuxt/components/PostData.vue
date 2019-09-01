@@ -9,15 +9,19 @@
                 v-if="post.heroimage"
                 :blank-src="
                   `${postCdn}/${
-                    type === 'blog' ? 'blogimages' : 'projectimages'
-                  }/${post.id}/${post.heroimage}/blur`
+                    type === 'blog'
+                      ? staticstorageindexes.blogfiles
+                      : staticstorageindexes.projectfiles
+                  }/${post.id}/${post.heroimage.id + paths.blur}`
                 "
                 :src="
                   `${postCdn}/${
-                    type === 'blog' ? 'blogimages' : 'projectimages'
-                  }/${post.id}/${post.heroimage}/original`
+                    type === 'blog'
+                      ? staticstorageindexes.blogfiles
+                      : staticstorageindexes.projectfiles
+                  }/${post.id}/${post.heroimage.id + paths.original}`
                 "
-                alt="Hero"
+                :alt="post.heroimage.name"
                 class="hero-img m-0"
               ></b-img-lazy>
               <div class="main-overlay">
@@ -28,10 +32,13 @@
             </b-col>
           </b-row>
         </b-container>
-        <b-container v-if="post">
+        <b-container v-if="post" id="header-container">
           <h1>{{ post.title }}</h1>
-          <p class="orange-text">{{ post.tags.join(' | ') }}</p>
-          <hr />
+          <p class="orange-text">
+            {{ post.tags.map(tag => decodeURIComponent(tag)).join(' | ') }}
+          </p>
+        </b-container>
+        <b-container v-if="post" id="content-container">
           <vue-markdown
             :source="post.content"
             class="markdown"
@@ -55,7 +62,12 @@ import Prism from 'prismjs'
 import LazyLoad from 'vanilla-lazyload'
 import Loading from '~/components/PageLoading.vue'
 import TileCarousel from '~/components/TileCarousel.vue'
-import { validTypes, cloudStorageURLs } from '~/assets/config'
+import {
+  validTypes,
+  cloudStorageURLs,
+  staticstorageindexes,
+  paths
+} from '~/assets/config'
 const lazyLoadInstance = new LazyLoad({
   elements_selector: '.lazy'
 })
@@ -85,7 +97,9 @@ export default Vue.extend({
       id: null,
       post: null,
       shortlinkurl: shortlinkurl,
-      postCdn: cloudStorageURLs.posts
+      postCdn: cloudStorageURLs.posts,
+      staticstorageindexes: staticstorageindexes,
+      paths: paths
     }
   },
   /* eslint-disable */
@@ -100,7 +114,7 @@ export default Vue.extend({
             )}",id:"${encodeURIComponent(this.id)}",cache:${(!(
               this.$store.state.auth.user &&
               this.$store.state.auth.user.type === 'admin'
-            )).toString()}){title caption content id author views shortlink heroimage categories tags}}`
+            )).toString()}){title caption content id author shortlink heroimage{name id} tileimage{id} categories tags}}`
           }
         })
         .then(res => {
@@ -165,8 +179,8 @@ export default Vue.extend({
     const script: any = []
     if (this.post) {
       const image = `${cloudStorageURLs.posts}/${
-                      this.type === 'blog' ? 'blogimages' : 'projectimages'
-                    }/${this.post.id}/${encodeURI(this.post.tileimage)}/original`
+                      this.type === 'blog' ? this.staticstorageindexes.blogfiles : this.staticstorageindexes.projectfiles
+                    }/${this.post.id}/${this.post.tileimage.id + this.paths.original}`
       meta.push({
         property: 'og:image',
         content: image
@@ -184,8 +198,8 @@ export default Vue.extend({
           alternativeHeadline: this.post.caption,
           image: image,
           editor: this.post.author, 
-          genre: this.post.categories.join(' '),
-          keywords: this.post.tags.join(' '),
+          genre: this.post.categories.map(category => decodeURIComponent(category)).join(' | '),
+          keywords: this.post.tags.map(tag => decodeURIComponent(tag)).join(' | '),
           wordcount: this.post.content.length,
           publisher: seo.url,
           url: seo.url,
@@ -236,8 +250,13 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
-.orange-text {
-  color: orange;
+#content-container {
+  padding-left: 0;
+  padding-right: 0;
+}
+#content-container p, h1, h2, h3, h4, h5, h6 {
+  padding-right: 15px;
+  padding-left: 15px;
 }
 #post-data {
   display: flex;

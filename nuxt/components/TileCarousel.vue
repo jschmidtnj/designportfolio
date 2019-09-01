@@ -59,19 +59,23 @@
                 <b-card-img-lazy
                   :src="
                     `${imgUrl}/${
-                      type === 'blog' ? 'blogimages' : 'projectimages'
-                    }/${postval.id}/${encodeURI(postval.tileimage)}/original`
+                      type === 'blog'
+                        ? staticstorageindexes.blogfiles
+                        : staticstorageindexes.projectfiles
+                    }/${postval.id}/${postval.tileimage.id + paths.original}`
                   "
                   :blank-src="
                     `${imgUrl}/${
-                      type === 'blog' ? 'blogimages' : 'projectimages'
-                    }/${postval.id}/${encodeURI(postval.tileimage)}/blur`
+                      type === 'blog'
+                        ? staticstorageindexes.blogfiles
+                        : staticstorageindexes.projectfiles
+                    }/${postval.id}/${postval.tileimage.id + paths.blur}`
                   "
                   :alt="postval.title"
                   class="tile-img"
                 />
                 <b-container>
-                  <b-card-title title-tag="h5">
+                  <b-card-title title-tag="h6" class="pt-2">
                     {{ postval.caption }}
                   </b-card-title>
                 </b-container>
@@ -109,7 +113,12 @@
 <script lang="ts">
 import Vue from 'vue'
 import Loading from '~/components/ComponentLoading.vue'
-import { validTypes, cloudStorageURLs } from '~/assets/config'
+import {
+  validTypes,
+  cloudStorageURLs,
+  staticstorageindexes,
+  paths
+} from '~/assets/config'
 export default Vue.extend({
   name: 'TileCarousel',
   components: {
@@ -132,7 +141,9 @@ export default Vue.extend({
       window: {
         width: 0,
         height: 0
-      }
+      },
+      staticstorageindexes: staticstorageindexes,
+      paths: paths
     }
   },
   destroyed() {
@@ -329,6 +340,7 @@ export default Vue.extend({
   text-align: center;
   max-width: 250px;
   min-width: 150px;
+  border: 0 !important;
 }
 .zoom:hover {
   transform: scale(1.05);

@@ -23,11 +23,19 @@ func interfaceListToStringList(interfaceList []interface{}) ([]string, error) {
 		if !ok {
 			return nil, errors.New("item in list cannot be cast to string")
 		}
-		itemStrDecoded, err := url.QueryUnescape(itemStr)
-		if err != nil {
-			return nil, err
+		result[i] = itemStr
+	}
+	return result, nil
+}
+
+func interfaceListToMapList(interfaceList []interface{}) ([]map[string]interface{}, error) {
+	result := make([]map[string]interface{}, len(interfaceList))
+	for i, item := range interfaceList {
+		itemObj, ok := item.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("item in list cannot be map")
 		}
-		result[i] = itemStrDecoded
+		result[i] = itemObj
 	}
 	return result, nil
 }
@@ -87,6 +95,44 @@ func deleteAccount(idstring string) (interface{}, error) {
 	return userData, nil
 }
 
+func checkFileObjCreate(fileobj map[string]interface{}) error {
+	if fileobj["id"] == nil || fileobj["name"] == nil ||
+		fileobj["width"] == nil || fileobj["height"] == nil ||
+		fileobj["type"] == nil {
+		return errors.New("no file id or name or width or height or type given")
+	}
+	return checkFileObjUpdate(fileobj)
+}
+
+func checkFileObjUpdate(fileobj map[string]interface{}) error {
+	if fileobj["id"] != nil {
+		if _, ok := fileobj["id"].(string); !ok {
+			return errors.New("problem casting id to string")
+		}
+	}
+	if fileobj["name"] != nil {
+		if _, ok := fileobj["name"].(string); !ok {
+			return errors.New("problem casting name to string")
+		}
+	}
+	if fileobj["width"] != nil {
+		if _, ok := fileobj["width"].(int); !ok {
+			return errors.New("problem casting width to int")
+		}
+	}
+	if fileobj["height"] != nil {
+		if _, ok := fileobj["height"].(int); !ok {
+			return errors.New("problem casting height to int")
+		}
+	}
+	if fileobj["type"] != nil {
+		if _, ok := fileobj["type"].(string); !ok {
+			return errors.New("problem casting type to string")
+		}
+	}
+	return nil
+}
+
 func rootMutation() *graphql.Object {
 	return graphql.NewObject(graphql.ObjectConfig{
 		Name: "Mutation",
@@ -123,16 +169,13 @@ func rootMutation() *graphql.Object {
 						Type: graphql.NewList(graphql.String),
 					},
 					"heroimage": &graphql.ArgumentConfig{
-						Type: graphql.String,
+						Type: FileInputType,
 					},
 					"tileimage": &graphql.ArgumentConfig{
-						Type: graphql.String,
-					},
-					"images": &graphql.ArgumentConfig{
-						Type: graphql.NewList(graphql.String),
+						Type: FileInputType,
 					},
 					"files": &graphql.ArgumentConfig{
-						Type: graphql.NewList(graphql.String),
+						Type: graphql.NewList(FileInputType),
 					},
 				},
 				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
@@ -140,13 +183,13 @@ func rootMutation() *graphql.Object {
 					if err != nil {
 						return nil, err
 					}
-					if params.Args["id"] == nil || params.Args["title"] == nil || params.Args["content"] == nil ||
+					if params.Args["id"] == nil || params.Args["title"] == nil ||
 						params.Args["author"] == nil || params.Args["type"] == nil ||
-						params.Args["heroimage"] == nil || params.Args["images"] == nil ||
+						params.Args["heroimage"] == nil || params.Args["content"] == nil ||
 						params.Args["files"] == nil || params.Args["caption"] == nil ||
 						params.Args["color"] == nil || params.Args["tags"] == nil ||
 						params.Args["categories"] == nil || params.Args["tileimage"] == nil {
-						return nil, errors.New("title or content or author or type or heroimage or images or files or caption or color or tags or categories or tileimage not provided")
+						return nil, errors.New("title or content or author or type or heroimage or files or caption or color or tags or categories or tileimage not provided")
 					}
 					idstring, ok := params.Args["id"].(string)
 					if !ok {
@@ -206,34 +249,37 @@ func rootMutation() *graphql.Object {
 					if err != nil {
 						return nil, err
 					}
-					heroimage, ok := params.Args["heroimage"].(string)
+					heroimage, ok := params.Args["heroimage"].(map[string]interface{})
 					if !ok {
-						return nil, errors.New("problem casting heroimage to string")
+						return nil, errors.New("problem casting heroimage to map")
 					}
-					tileimage, ok := params.Args["tileimage"].(string)
+					if err := checkFileObjCreate(heroimage); err != nil {
+						heroimage = nil
+					}
+					tileimage, ok := params.Args["tileimage"].(map[string]interface{})
 					if !ok {
-						return nil, errors.New("problem casting tileimage to string")
+						return nil, errors.New("problem casting tileimage to map")
 					}
-					imagesinterface, ok := params.Args["images"].([]interface{})
-					if !ok {
-						return nil, errors.New("problem casting images to interface array")
-					}
-					images, err := interfaceListToStringList(imagesinterface)
-					if err != nil {
+					if err := checkFileObjCreate(tileimage); err != nil {
 						return nil, err
 					}
 					filesinterface, ok := params.Args["files"].([]interface{})
 					if !ok {
 						return nil, errors.New("problem casting files to interface array")
 					}
-					files, err := interfaceListToStringList(filesinterface)
+					files, err := interfaceListToMapList(filesinterface)
 					if err != nil {
 						return nil, err
+					}
+					for _, file := range files {
+						if err := checkFileObjCreate(file); err != nil {
+							return nil, err
+						}
 					}
 					var mongoCollection *mongo.Collection
 					var postElasticIndex string
 					var postElasticType string
-					if thetype == "blog" {
+					if thetype == blogType {
 						mongoCollection = blogCollection
 						postElasticIndex = blogElasticIndex
 						postElasticType = blogElasticType
@@ -258,7 +304,6 @@ func rootMutation() *graphql.Object {
 						"views":      0,
 						"heroimage":  heroimage,
 						"tileimage":  tileimage,
-						"images":     images,
 						"files":      files,
 						"comments":   []string{},
 						"shortlink":  shortlink,
@@ -329,16 +374,13 @@ func rootMutation() *graphql.Object {
 						Type: graphql.NewList(graphql.String),
 					},
 					"heroimage": &graphql.ArgumentConfig{
-						Type: graphql.String,
+						Type: FileInputType,
 					},
 					"tileimage": &graphql.ArgumentConfig{
-						Type: graphql.String,
-					},
-					"images": &graphql.ArgumentConfig{
-						Type: graphql.NewList(graphql.String),
+						Type: FileInputType,
 					},
 					"files": &graphql.ArgumentConfig{
-						Type: graphql.NewList(graphql.String),
+						Type: graphql.NewList(FileInputType),
 					},
 				},
 				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
@@ -423,38 +465,42 @@ func rootMutation() *graphql.Object {
 						updateData["categories"] = categories
 					}
 					if params.Args["heroimage"] != nil {
-						heroimage, ok := params.Args["heroimage"].(string)
+						heroimage, ok := params.Args["heroimage"].(map[string]interface{})
 						if !ok {
-							return nil, errors.New("problem casting heroimage to string")
+							return nil, errors.New("problem casting heroimage to map")
 						}
-						updateData["heroimage"] = heroimage
+						if len(heroimage) > 0 {
+							if err := checkFileObjUpdate(heroimage); err != nil {
+								return nil, err
+							}
+							updateData["heroimage"] = heroimage
+						}
 					}
 					if params.Args["tileimage"] != nil {
-						tileimage, ok := params.Args["tileimage"].(string)
+						tileimage, ok := params.Args["tileimage"].(map[string]interface{})
 						if !ok {
-							return nil, errors.New("problem casting tileimage to string")
+							return nil, errors.New("problem casting tileimage to map")
 						}
-						updateData["tileimage"] = tileimage
-					}
-					if params.Args["images"] != nil {
-						imagesinterface, ok := params.Args["images"].([]interface{})
-						if !ok {
-							return nil, errors.New("problem casting images to interface array")
+						if len(tileimage) > 0 {
+							if err := checkFileObjUpdate(tileimage); err != nil {
+								return nil, err
+							}
+							updateData["tileimage"] = tileimage
 						}
-						images, err := interfaceListToStringList(imagesinterface)
-						if err != nil {
-							return nil, err
-						}
-						updateData["images"] = images
 					}
 					if params.Args["files"] != nil {
 						filesinterface, ok := params.Args["files"].([]interface{})
 						if !ok {
 							return nil, errors.New("problem casting files to interface array")
 						}
-						files, err := interfaceListToStringList(filesinterface)
+						files, err := interfaceListToMapList(filesinterface)
 						if err != nil {
 							return nil, err
+						}
+						for _, file := range files {
+							if err := checkFileObjUpdate(file); err != nil {
+								return nil, err
+							}
 						}
 						updateData["files"] = files
 					}
@@ -468,7 +514,7 @@ func rootMutation() *graphql.Object {
 					var mongoCollection *mongo.Collection
 					var postElasticIndex string
 					var postElasticType string
-					if thetype == "blog" {
+					if thetype == blogType {
 						mongoCollection = blogCollection
 						postElasticIndex = blogElasticIndex
 						postElasticType = blogElasticType
@@ -555,7 +601,7 @@ func rootMutation() *graphql.Object {
 					var mongoCollection *mongo.Collection
 					var postElasticIndex string
 					var postElasticType string
-					if thetype == "blog" {
+					if thetype == blogType {
 						mongoCollection = blogCollection
 						postElasticIndex = blogElasticIndex
 						postElasticType = blogElasticType
@@ -617,19 +663,24 @@ func rootMutation() *graphql.Object {
 					if err != nil {
 						return nil, err
 					}
-					heroimageid, ok := postData["heroimage"].(string)
-					if !ok {
-						return nil, errors.New("cannot convert heroimage to string")
-					}
-					if len(heroimageid) > 0 {
+					if postData["heroimage"] != nil {
+						heroimagedatadoc, ok := postData["heroimage"].(primitive.D)
+						if !ok {
+							return nil, errors.New("cannot convert heroimage to primitive doc")
+						}
+						heroimagedata := heroimagedatadoc.Map()
+						heroimageid, ok := heroimagedata["id"].(string)
+						if !ok {
+							return nil, errors.New("cannot convert heroimage id to string")
+						}
 						var heroobjblur *storage.ObjectHandle
 						var heroobjoriginal *storage.ObjectHandle
-						if thetype == "blog" {
-							heroobjblur = storageBucket.Object(blogImageIndex + "/" + idstr + "/" + heroimageid + "/blur")
-							heroobjoriginal = storageBucket.Object(blogImageIndex + "/" + idstr + "/" + heroimageid + "/original")
+						if thetype == blogType {
+							heroobjblur = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + heroimageid + blurPath)
+							heroobjoriginal = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + heroimageid + originalPath)
 						} else {
-							heroobjblur = storageBucket.Object(projectImageIndex + "/" + idstr + "/" + heroimageid + "/blur")
-							heroobjoriginal = storageBucket.Object(projectImageIndex + "/" + idstr + "/" + heroimageid + "/original")
+							heroobjblur = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + heroimageid + blurPath)
+							heroobjoriginal = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + heroimageid + originalPath)
 						}
 						if err := heroobjblur.Delete(ctxStorage); err != nil {
 							return nil, err
@@ -638,19 +689,24 @@ func rootMutation() *graphql.Object {
 							return nil, err
 						}
 					}
-					tileimageid, ok := postData["tileimage"].(string)
-					if !ok {
-						return nil, errors.New("cannot convert tileimage to string")
-					}
-					if len(tileimageid) > 0 {
+					if postData["tileimage"] != nil {
+						tileimagedatadoc, ok := postData["tileimage"].(primitive.D)
+						if !ok {
+							return nil, errors.New("cannot convert tileimage to primitive doc")
+						}
+						tileimagedata := tileimagedatadoc.Map()
+						tileimageid, ok := tileimagedata["id"].(string)
+						if !ok {
+							return nil, errors.New("cannot convert tileimage id to string")
+						}
 						var tileobjblur *storage.ObjectHandle
 						var tileobjoriginal *storage.ObjectHandle
-						if thetype == "blog" {
-							tileobjblur = storageBucket.Object(blogImageIndex + "/" + idstr + "/" + tileimageid + "/blur")
-							tileobjoriginal = storageBucket.Object(blogImageIndex + "/" + idstr + "/" + tileimageid + "/original")
+						if thetype == blogType {
+							tileobjblur = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + tileimageid + blurPath)
+							tileobjoriginal = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + tileimageid + originalPath)
 						} else {
-							tileobjblur = storageBucket.Object(projectImageIndex + "/" + idstr + "/" + tileimageid + "/blur")
-							tileobjoriginal = storageBucket.Object(projectImageIndex + "/" + idstr + "/" + tileimageid + "/original")
+							tileobjblur = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + tileimageid + blurPath)
+							tileobjoriginal = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + tileimageid + originalPath)
 						}
 						if err := tileobjblur.Delete(ctxStorage); err != nil {
 							return nil, err
@@ -659,42 +715,66 @@ func rootMutation() *graphql.Object {
 							return nil, err
 						}
 					}
-					primativeimageids, ok := postData["images"].(primitive.A)
+					primativefiles, ok := postData["files"].(primitive.A)
 					if !ok {
-						return nil, errors.New("cannot convert imageids to primitive")
+						return nil, errors.New("cannot convert files to primitive")
 					}
-					for _, primativeimageid := range primativeimageids {
-						imageid := primativeimageid.(string)
-						var imageobjblur *storage.ObjectHandle
-						var imageobjoriginal *storage.ObjectHandle
-						if thetype == "blog" {
-							imageobjblur = storageBucket.Object(blogImageIndex + "/" + idstr + "/" + imageid + "/blur")
-							imageobjoriginal = storageBucket.Object(blogImageIndex + "/" + idstr + "/" + imageid + "/original")
-						} else {
-							imageobjblur = storageBucket.Object(projectImageIndex + "/" + idstr + "/" + imageid + "/blur")
-							imageobjoriginal = storageBucket.Object(projectImageIndex + "/" + idstr + "/" + imageid + "/original")
+					for _, primativefile := range primativefiles {
+						filedatadoc, ok := primativefile.(primitive.D)
+						if !ok {
+							return nil, errors.New("cannot convert file to primitive doc")
 						}
-						if err := imageobjblur.Delete(ctxStorage); err != nil {
-							return nil, err
+						filedata := filedatadoc.Map()
+						fileid, ok := filedata["id"].(string)
+						if !ok {
+							return nil, errors.New("cannot convert file id to string")
 						}
-						if err := imageobjoriginal.Delete(ctxStorage); err != nil {
-							return nil, err
+						filetype, ok := filedata["type"].(string)
+						if !ok {
+							return nil, errors.New("cannot convert file type to string")
 						}
-					}
-					primativefileids, ok := postData["files"].(primitive.A)
-					if !ok {
-						return nil, errors.New("cannot convert fileids to primitive")
-					}
-					for _, primativefileid := range primativefileids {
-						fileid := primativefileid.(string)
 						var fileobj *storage.ObjectHandle
-						if thetype == "blog" {
-							fileobj = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + fileid)
+						if thetype == blogType {
+							fileobj = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + fileid + originalPath)
 						} else {
-							fileobj = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + fileid)
+							fileobj = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + fileid + originalPath)
 						}
 						if err := fileobj.Delete(ctxStorage); err != nil {
 							return nil, err
+						}
+						if filetype == "image/gif" {
+							var blurobj *storage.ObjectHandle
+							if thetype == blogType {
+								fileobj = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + fileid + placeholderPath + originalPath)
+								blurobj = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + fileid + placeholderPath + blurPath)
+							} else {
+								fileobj = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + fileid + placeholderPath + originalPath)
+								blurobj = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + fileid + placeholderPath + blurPath)
+							}
+							if err := fileobj.Delete(ctxStorage); err != nil {
+								return nil, err
+							}
+							if err := blurobj.Delete(ctxStorage); err != nil {
+								return nil, err
+							}
+						} else {
+							var hasblur = false
+							for _, blurtype := range haveblur {
+								if blurtype == filetype {
+									hasblur = true
+									break
+								}
+							}
+							if hasblur {
+								if thetype == blogType {
+									fileobj = storageBucket.Object(blogFileIndex + "/" + idstr + "/" + fileid + blurPath)
+								} else {
+									fileobj = storageBucket.Object(projectFileIndex + "/" + idstr + "/" + fileid + blurPath)
+								}
+								if err := fileobj.Delete(ctxStorage); err != nil {
+									return nil, err
+								}
+							}
 						}
 					}
 					if err != nil {

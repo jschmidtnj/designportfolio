@@ -24,13 +24,17 @@
                 <b-card-img-lazy
                   :src="
                     `${imgUrl}/${
-                      type === 'blog' ? 'blogimages' : 'projectimages'
-                    }/${postval.id}/${encodeURI(postval.tileimage)}/original`
+                      type === 'blog'
+                        ? staticstorageindexes.blogfiles
+                        : staticstorageindexes.projectfiles
+                    }/${postval.id}/${postval.tileimage.id + paths.original}`
                   "
                   :blank-src="
                     `${imgUrl}/${
-                      type === 'blog' ? 'blogimages' : 'projectimages'
-                    }/${postval.id}/${encodeURI(postval.tileimage)}/blur`
+                      type === 'blog'
+                        ? staticstorageindexes.blogfiles
+                        : staticstorageindexes.projectfiles
+                    }/${postval.id}/${postval.tileimage.id + paths.blur}`
                   "
                   :alt="postval.title"
                   class="tile-img rounded-0"
@@ -63,7 +67,12 @@
 <script lang="ts">
 import Vue from 'vue'
 import Loading from '~/components/ComponentLoading.vue'
-import { validTypes, cloudStorageURLs } from '~/assets/config'
+import {
+  validTypes,
+  cloudStorageURLs,
+  staticstorageindexes,
+  paths
+} from '~/assets/config'
 const defaultOpacity = 20 // %
 const numPerRow = 2
 const defaultOpacityHex = Math.round((defaultOpacity / 100.0) * 255)
@@ -87,7 +96,9 @@ export default Vue.extend({
       imgUrl: cloudStorageURLs.posts,
       shownPosts: [],
       loading: true,
-      selected: []
+      selected: [],
+      staticstorageindexes: staticstorageindexes,
+      paths: paths
     }
   },
   async mounted() {
@@ -211,7 +222,7 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
-.tile-img img {
+.tile-img {
   object-fit: cover;
   width: 100%;
   height: 200px;
