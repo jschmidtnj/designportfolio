@@ -6,7 +6,9 @@
           alt="Annette von Brandis"
           :src="require('~/static/logo.svg')"
           style="width:3rem;"
+          class="mr-3"
         />
+        <p class="logo-name">Annette von Brandis</p>
       </b-navbar-brand>
       <b-navbar-toggle target="navbarContent"></b-navbar-toggle>
       <b-collapse id="navbarContent" is-nav>
@@ -55,4 +57,9 @@ export default Vue.extend({
 })
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+.logo-name{
+  color: #008bb4;
+  display: inline;
+}
+</style>
